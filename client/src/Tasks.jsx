@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import AddTaskModal from './AddTaskModal'
 import Badge from './Badge'
 import ConfirmModal from './ConfirmModal'
+import TaskDetailDrawer from './TaskDetailDrawer'
+import { INITIAL_TASKS } from './data/tasks'
 import { IconPlus } from './icons'
 
 const FILTERS = [
@@ -11,141 +13,13 @@ const FILTERS = [
   { id: 'completed', label: 'Completed' },
 ]
 
-const INITIAL_TASKS = [
-  {
-    id: 't1',
-    name: 'Ship homepage v2 to staging',
-    client: 'Relay Apps',
-    status: 'in-progress',
-    statusBadge: { label: 'In Progress', variant: 'info' },
-    priority: { label: 'High', variant: 'danger' },
-    dueDate: 'Jun 7, 2026',
-  },
-  {
-    id: 't2',
-    name: 'Send sprint recap and loom walkthrough',
-    client: 'Patchwork Foods',
-    status: 'pending',
-    statusBadge: { label: 'Pending', variant: 'neutral' },
-    priority: { label: 'Medium', variant: 'warning' },
-    dueDate: 'Jun 8, 2026',
-  },
-  {
-    id: 't3',
-    name: 'Review revised scope for Phase 2',
-    client: 'Harbor & Co.',
-    status: 'in-progress',
-    statusBadge: { label: 'In Progress', variant: 'info' },
-    priority: { label: 'Medium', variant: 'warning' },
-    dueDate: 'Jun 9, 2026',
-  },
-  {
-    id: 't4',
-    name: 'Export production assets for launch',
-    client: 'Vaultline Security',
-    status: 'pending',
-    statusBadge: { label: 'Pending', variant: 'neutral' },
-    priority: { label: 'Low', variant: 'neutral' },
-    dueDate: 'Jun 10, 2026',
-  },
-  {
-    id: 't5',
-    name: 'Book content walkthrough with marketing',
-    client: 'Kite & Anchor',
-    status: 'pending',
-    statusBadge: { label: 'Pending', variant: 'neutral' },
-    priority: { label: 'Low', variant: 'neutral' },
-    dueDate: 'Jun 12, 2026',
-  },
-  {
-    id: 't6',
-    name: 'Build shared component library',
-    client: 'Relay Apps',
-    status: 'in-progress',
-    statusBadge: { label: 'In Progress', variant: 'info' },
-    priority: { label: 'High', variant: 'danger' },
-    dueDate: 'Jun 14, 2026',
-  },
-  {
-    id: 't7',
-    name: 'Draft proposal for analytics dashboard',
-    client: 'Lumen Analytics',
-    status: 'in-progress',
-    statusBadge: { label: 'In Progress', variant: 'info' },
-    priority: { label: 'Medium', variant: 'warning' },
-    dueDate: 'Jun 15, 2026',
-  },
-  {
-    id: 't8',
-    name: 'Scope one-page pitch site',
-    client: 'Atlas Ventures',
-    status: 'pending',
-    statusBadge: { label: 'Pending', variant: 'neutral' },
-    priority: { label: 'Low', variant: 'neutral' },
-    dueDate: 'Jun 18, 2026',
-  },
-  {
-    id: 't9',
-    name: 'Homepage responsive QA passed',
-    client: 'Patchwork Foods',
-    status: 'completed',
-    statusBadge: { label: 'Completed', variant: 'success' },
-    priority: { label: 'High', variant: 'danger' },
-    dueDate: 'Jun 5, 2026',
-  },
-  {
-    id: 't10',
-    name: 'Invoice #1042 sent for May retainer',
-    client: 'Relay Apps',
-    status: 'completed',
-    statusBadge: { label: 'Completed', variant: 'success' },
-    priority: { label: 'Medium', variant: 'warning' },
-    dueDate: 'Jun 4, 2026',
-  },
-  {
-    id: 't11',
-    name: 'Confirm June retainer payment',
-    client: 'Kite & Anchor',
-    status: 'completed',
-    statusBadge: { label: 'Completed', variant: 'success' },
-    priority: { label: 'Low', variant: 'neutral' },
-    dueDate: 'Jun 2, 2026',
-  },
-  {
-    id: 't12',
-    name: 'Hand off design tokens to dev',
-    client: 'Vaultline Security',
-    status: 'completed',
-    statusBadge: { label: 'Completed', variant: 'success' },
-    priority: { label: 'Medium', variant: 'warning' },
-    dueDate: 'May 28, 2026',
-  },
-  {
-    id: 't13',
-    name: 'Reconcile May contractor payouts',
-    client: 'Clearline Studio',
-    status: 'completed',
-    statusBadge: { label: 'Completed', variant: 'success' },
-    priority: { label: 'Low', variant: 'neutral' },
-    dueDate: 'May 31, 2026',
-  },
-  {
-    id: 't14',
-    name: 'Wire store locator map integration',
-    client: 'Fieldstone Retail',
-    status: 'in-progress',
-    statusBadge: { label: 'In Progress', variant: 'info' },
-    priority: { label: 'Medium', variant: 'warning' },
-    dueDate: 'Jun 20, 2026',
-  },
-]
-
 export default function Tasks() {
   const [tasks, setTasks] = useState(INITIAL_TASKS)
   const [activeFilter, setActiveFilter] = useState('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [deletingTask, setDeletingTask] = useState(null)
+  const [selectedTask, setSelectedTask] = useState(null)
 
   const filteredTasks = useMemo(() => {
     if (activeFilter === 'all') return tasks
@@ -174,6 +48,9 @@ export default function Tasks() {
   function closeModal() {
     setIsModalOpen(false)
     setEditingTask(null)
+    if (selectedTask) {
+      document.body.style.overflow = 'hidden'
+    }
   }
 
   function handleSaveTask(task) {
@@ -181,6 +58,7 @@ export default function Tasks() {
       setTasks((current) =>
         current.map((item) => (item.id === task.id ? task : item)),
       )
+      setSelectedTask((current) => (current?.id === task.id ? task : current))
     } else {
       setTasks((current) => [task, ...current])
     }
@@ -193,13 +71,27 @@ export default function Tasks() {
 
   function closeDeleteModal() {
     setDeletingTask(null)
+    if (selectedTask) {
+      document.body.style.overflow = 'hidden'
+    }
   }
 
   function confirmDeleteTask() {
     if (!deletingTask) return
 
     setTasks((current) => current.filter((item) => item.id !== deletingTask.id))
+    setSelectedTask((current) =>
+      current?.id === deletingTask.id ? null : current,
+    )
     closeDeleteModal()
+  }
+
+  function openDrawer(task) {
+    setSelectedTask(task)
+  }
+
+  function closeDrawer() {
+    setSelectedTask(null)
   }
 
   return (
@@ -249,7 +141,21 @@ export default function Tasks() {
             <tbody>
               {filteredTasks.length > 0 ? (
                 filteredTasks.map((task) => (
-                  <tr key={task.id}>
+                  <tr
+                    key={task.id}
+                    className={`tasks-table__row${
+                      selectedTask?.id === task.id ? ' tasks-table__row--selected' : ''
+                    }`}
+                    onClick={() => openDrawer(task)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        openDrawer(task)
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-label={`View details for ${task.name}`}
+                  >
                     <td>
                       <div className="task-name">
                         <span
@@ -274,14 +180,20 @@ export default function Tasks() {
                         <button
                           type="button"
                           className="btn btn--secondary btn--sm"
-                          onClick={() => openEditModal(task)}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openEditModal(task)
+                          }}
                         >
                           Edit
                         </button>
                         <button
                           type="button"
                           className="btn btn--danger btn--sm"
-                          onClick={() => openDeleteModal(task)}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openDeleteModal(task)
+                          }}
                         >
                           Delete
                         </button>
@@ -310,6 +222,13 @@ export default function Tasks() {
         task={editingTask}
         onClose={closeModal}
         onSave={handleSaveTask}
+      />
+
+      <TaskDetailDrawer
+        task={selectedTask}
+        onClose={closeDrawer}
+        onEdit={openEditModal}
+        onDelete={openDeleteModal}
       />
 
       <ConfirmModal

@@ -1,119 +1,10 @@
 import { useMemo, useState } from 'react'
 import AddClientModal from './AddClientModal'
 import Badge from './Badge'
+import ClientDetailDrawer from './ClientDetailDrawer'
 import ConfirmModal from './ConfirmModal'
+import { INITIAL_CLIENTS } from './data/clients'
 import { IconPlus, IconSearch } from './icons'
-
-const INITIAL_CLIENTS = [
-  {
-    id: 'c1',
-    company: 'Relay Apps',
-    contact: 'Sarah Chen',
-    email: 'sarah@relayapps.io',
-    status: { label: 'Active', variant: 'success' },
-    projectValue: 18500,
-    lastActivity: '2 hours ago',
-  },
-  {
-    id: 'c2',
-    company: 'Patchwork Foods',
-    contact: 'Marcus Webb',
-    email: 'marcus@patchworkfoods.com',
-    status: { label: 'Active', variant: 'success' },
-    projectValue: 12400,
-    lastActivity: '5 hours ago',
-  },
-  {
-    id: 'c3',
-    company: 'Harbor & Co.',
-    contact: 'Elena Vasquez',
-    email: 'elena@harborco.com',
-    status: { label: 'On hold', variant: 'warning' },
-    projectValue: 8200,
-    lastActivity: 'Yesterday',
-  },
-  {
-    id: 'c4',
-    company: 'Vaultline Security',
-    contact: 'James Okonkwo',
-    email: 'james@vaultline.security',
-    status: { label: 'Active', variant: 'success' },
-    projectValue: 9600,
-    lastActivity: 'Yesterday',
-  },
-  {
-    id: 'c5',
-    company: 'Kite & Anchor',
-    contact: 'Priya Nair',
-    email: 'priya@kiteandanchor.com',
-    status: { label: 'Active', variant: 'success' },
-    projectValue: 22000,
-    lastActivity: 'Jun 4',
-  },
-  {
-    id: 'c6',
-    company: 'Lumen Analytics',
-    contact: 'David Park',
-    email: 'david@lumenanalytics.com',
-    status: { label: 'Lead', variant: 'info' },
-    projectValue: 0,
-    lastActivity: 'Jun 3',
-  },
-  {
-    id: 'c7',
-    company: 'Atlas Ventures',
-    contact: 'Rachel Kim',
-    email: 'rachel@atlasvc.com',
-    status: { label: 'Lead', variant: 'info' },
-    projectValue: 0,
-    lastActivity: 'Jun 2',
-  },
-  {
-    id: 'c8',
-    company: 'Copperline Media',
-    contact: 'Tom Bradley',
-    email: 'tom@copperline.media',
-    status: { label: 'At risk', variant: 'danger' },
-    projectValue: 5400,
-    lastActivity: 'May 30',
-  },
-  {
-    id: 'c9',
-    company: 'Fieldstone Retail',
-    contact: 'Amira Hassan',
-    email: 'amira@fieldstone.co',
-    status: { label: 'Active', variant: 'success' },
-    projectValue: 14800,
-    lastActivity: 'May 29',
-  },
-  {
-    id: 'c10',
-    company: 'Waypoint Travel',
-    contact: 'Chris Dalton',
-    email: 'chris@waypoint.travel',
-    status: { label: 'Inactive', variant: 'neutral' },
-    projectValue: 3200,
-    lastActivity: 'May 15',
-  },
-  {
-    id: 'c11',
-    company: 'Nova Education',
-    contact: 'Lisa Fernandez',
-    email: 'lisa@novaedu.org',
-    status: { label: 'Active', variant: 'success' },
-    projectValue: 11200,
-    lastActivity: 'May 12',
-  },
-  {
-    id: 'c12',
-    company: 'Redwood Legal',
-    contact: 'Owen Mitchell',
-    email: 'owen@redwoodlegal.com',
-    status: { label: 'On hold', variant: 'warning' },
-    projectValue: 6700,
-    lastActivity: 'May 8',
-  },
-]
 
 function getInitials(company) {
   return company
@@ -151,6 +42,7 @@ export default function Clients() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingClient, setEditingClient] = useState(null)
   const [deletingClient, setDeletingClient] = useState(null)
+  const [selectedClient, setSelectedClient] = useState(null)
   const trimmedQuery = query.trim()
 
   const filteredClients = useMemo(
@@ -171,12 +63,18 @@ export default function Clients() {
   function closeModal() {
     setIsModalOpen(false)
     setEditingClient(null)
+    if (selectedClient) {
+      document.body.style.overflow = 'hidden'
+    }
   }
 
   function handleSaveClient(client) {
     if (editingClient) {
       setClients((current) =>
         current.map((item) => (item.id === client.id ? client : item)),
+      )
+      setSelectedClient((current) =>
+        current?.id === client.id ? client : current,
       )
     } else {
       setClients((current) => [client, ...current])
@@ -190,6 +88,9 @@ export default function Clients() {
 
   function closeDeleteModal() {
     setDeletingClient(null)
+    if (selectedClient) {
+      document.body.style.overflow = 'hidden'
+    }
   }
 
   function confirmDeleteClient() {
@@ -198,7 +99,18 @@ export default function Clients() {
     setClients((current) =>
       current.filter((item) => item.id !== deletingClient.id),
     )
+    setSelectedClient((current) =>
+      current?.id === deletingClient.id ? null : current,
+    )
     closeDeleteModal()
+  }
+
+  function openDrawer(client) {
+    setSelectedClient(client)
+  }
+
+  function closeDrawer() {
+    setSelectedClient(null)
   }
 
   return (
@@ -247,7 +159,23 @@ export default function Clients() {
             <tbody>
               {filteredClients.length > 0 ? (
                 filteredClients.map((client) => (
-                  <tr key={client.id}>
+                  <tr
+                    key={client.id}
+                    className={`clients-table__row${
+                      selectedClient?.id === client.id
+                        ? ' clients-table__row--selected'
+                        : ''
+                    }`}
+                    onClick={() => openDrawer(client)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        openDrawer(client)
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-label={`View details for ${client.company}`}
+                  >
                     <td>
                       <div className="client-company">
                         <span className="client-avatar" aria-hidden="true">
@@ -276,14 +204,20 @@ export default function Clients() {
                         <button
                           type="button"
                           className="btn btn--secondary btn--sm"
-                          onClick={() => openEditModal(client)}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openEditModal(client)
+                          }}
                         >
                           Edit
                         </button>
                         <button
                           type="button"
                           className="btn btn--danger btn--sm"
-                          onClick={() => openDeleteModal(client)}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openDeleteModal(client)
+                          }}
                         >
                           Delete
                         </button>
@@ -316,6 +250,13 @@ export default function Clients() {
         client={editingClient}
         onClose={closeModal}
         onSave={handleSaveClient}
+      />
+
+      <ClientDetailDrawer
+        client={selectedClient}
+        onClose={closeDrawer}
+        onEdit={openEditModal}
+        onDelete={openDeleteModal}
       />
 
       <ConfirmModal

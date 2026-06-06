@@ -150,6 +150,14 @@ export function IconClock(props) {
   )
 }
 
+export function IconX(props) {
+  return (
+    <svg {...iconProps} {...props}>
+      <path d="M4.5 4.5l7 7M11.5 4.5l-7 7" />
+    </svg>
+  )
+}
+
 const ACTIVITY_ICONS = {
   invoice: IconFile,
   message: IconMessage,
