@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import AddTaskModal from './AddTaskModal'
 import Badge from './Badge'
 import { IconPlus } from './icons'
 
@@ -9,7 +10,7 @@ const FILTERS = [
   { id: 'completed', label: 'Completed' },
 ]
 
-const TASKS = [
+const INITIAL_TASKS = [
   {
     id: 't1',
     name: 'Deliver wireframes v2',
@@ -139,21 +140,28 @@ const TASKS = [
 ]
 
 export default function Tasks() {
+  const [tasks, setTasks] = useState(INITIAL_TASKS)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const filteredTasks = useMemo(() => {
-    if (activeFilter === 'all') return TASKS
-    return TASKS.filter((task) => task.status === activeFilter)
-  }, [activeFilter])
+    if (activeFilter === 'all') return tasks
+    return tasks.filter((task) => task.status === activeFilter)
+  }, [tasks, activeFilter])
 
   const filterCounts = useMemo(() => {
     return {
-      all: TASKS.length,
-      'in-progress': TASKS.filter((task) => task.status === 'in-progress').length,
-      pending: TASKS.filter((task) => task.status === 'pending').length,
-      completed: TASKS.filter((task) => task.status === 'completed').length,
+      all: tasks.length,
+      'in-progress': tasks.filter((task) => task.status === 'in-progress').length,
+      pending: tasks.filter((task) => task.status === 'pending').length,
+      completed: tasks.filter((task) => task.status === 'completed').length,
     }
-  }, [])
+  }, [tasks])
+
+  function handleAddTask(task) {
+    setTasks((current) => [task, ...current])
+    setIsModalOpen(false)
+  }
 
   return (
     <div className="tasks">
@@ -172,7 +180,11 @@ export default function Tasks() {
             </button>
           ))}
         </div>
-        <button type="button" className="btn btn--primary">
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => setIsModalOpen(true)}
+        >
           <IconPlus />
           New Task
         </button>
@@ -180,58 +192,64 @@ export default function Tasks() {
 
       <div className="tasks-table-card">
         <div className="table-scroll">
-        <table className="tasks-table">
-          <thead>
-            <tr>
-              <th scope="col">Task</th>
-              <th scope="col">Client</th>
-              <th scope="col">Status</th>
-              <th scope="col">Priority</th>
-              <th scope="col" className="tasks-table__align-right">
-                Due Date
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTasks.length > 0 ? (
-              filteredTasks.map((task) => (
-                <tr key={task.id}>
-                  <td>
-                    <div className="task-name">
-                      <span
-                        className={`task-name__check${task.status === 'completed' ? ' task-name__check--done' : ''}`}
-                        aria-hidden="true"
-                      />
-                      <span className="task-name__label">{task.name}</span>
-                    </div>
-                  </td>
-                  <td className="tasks-table__client">{task.client}</td>
-                  <td>
-                    <Badge {...task.statusBadge} />
-                  </td>
-                  <td>
-                    <Badge {...task.priority} />
-                  </td>
-                  <td className="tasks-table__align-right tasks-table__due">
-                    {task.dueDate}
+          <table className="tasks-table">
+            <thead>
+              <tr>
+                <th scope="col">Task</th>
+                <th scope="col">Client</th>
+                <th scope="col">Status</th>
+                <th scope="col">Priority</th>
+                <th scope="col" className="tasks-table__align-right">
+                  Due Date
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTasks.length > 0 ? (
+                filteredTasks.map((task) => (
+                  <tr key={task.id}>
+                    <td>
+                      <div className="task-name">
+                        <span
+                          className={`task-name__check${task.status === 'completed' ? ' task-name__check--done' : ''}`}
+                          aria-hidden="true"
+                        />
+                        <span className="task-name__label">{task.name}</span>
+                      </div>
+                    </td>
+                    <td className="tasks-table__client">{task.client}</td>
+                    <td>
+                      <Badge {...task.statusBadge} />
+                    </td>
+                    <td>
+                      <Badge {...task.priority} />
+                    </td>
+                    <td className="tasks-table__align-right tasks-table__due">
+                      {task.dueDate}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="tasks-table__empty">
+                    No tasks match this filter.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="tasks-table__empty">
-                  No tasks match this filter.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
         </div>
 
         <footer className="tasks-table__footer">
-          Showing {filteredTasks.length} of {TASKS.length} tasks
+          Showing {filteredTasks.length} of {tasks.length} tasks
         </footer>
       </div>
+
+      <AddTaskModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleAddTask}
+      />
     </div>
   )
 }

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
+import AddClientModal from './AddClientModal'
 import Badge from './Badge'
 import { IconPlus, IconSearch } from './icons'
 
-const CLIENTS = [
+const INITIAL_CLIENTS = [
   {
     id: 'c1',
     company: 'Northline Studio',
@@ -131,20 +132,33 @@ function formatCurrency(amount) {
   }).format(amount)
 }
 
+function filterClients(clients, query) {
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) return clients
+
+  return clients.filter(
+    (client) =>
+      client.company.toLowerCase().includes(normalized) ||
+      client.contact.toLowerCase().includes(normalized) ||
+      client.email.toLowerCase().includes(normalized),
+  )
+}
+
 export default function Clients() {
+  const [clients, setClients] = useState(INITIAL_CLIENTS)
   const [query, setQuery] = useState('')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const trimmedQuery = query.trim()
 
-  const filteredClients = useMemo(() => {
-    const normalized = query.trim().toLowerCase()
-    if (!normalized) return CLIENTS
+  const filteredClients = useMemo(
+    () => filterClients(clients, query),
+    [clients, query],
+  )
 
-    return CLIENTS.filter(
-      (client) =>
-        client.company.toLowerCase().includes(normalized) ||
-        client.contact.toLowerCase().includes(normalized) ||
-        client.email.toLowerCase().includes(normalized),
-    )
-  }, [query])
+  function handleAddClient(client) {
+    setClients((current) => [client, ...current])
+    setIsModalOpen(false)
+  }
 
   return (
     <div className="clients">
@@ -157,9 +171,14 @@ export default function Clients() {
             placeholder="Search by company, contact, or email..."
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            aria-label="Search clients"
           />
         </label>
-        <button type="button" className="btn btn--primary">
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => setIsModalOpen(true)}
+        >
           <IconPlus />
           Add Client
         </button>
@@ -167,64 +186,74 @@ export default function Clients() {
 
       <div className="clients-table-card">
         <div className="table-scroll">
-        <table className="clients-table">
-          <thead>
-            <tr>
-              <th scope="col">Company</th>
-              <th scope="col">Contact</th>
-              <th scope="col">Status</th>
-              <th scope="col" className="clients-table__align-right">
-                Project Value
-              </th>
-              <th scope="col" className="clients-table__align-right">
-                Last Activity
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredClients.length > 0 ? (
-              filteredClients.map((client) => (
-                <tr key={client.id}>
-                  <td>
-                    <div className="client-company">
-                      <span className="client-avatar" aria-hidden="true">
-                        {getInitials(client.company)}
-                      </span>
-                      <span className="client-company__name">{client.company}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="client-contact">
-                      <span className="client-contact__name">{client.contact}</span>
-                      <span className="client-contact__email">{client.email}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <Badge {...client.status} />
-                  </td>
-                  <td className="clients-table__align-right clients-table__value">
-                    {formatCurrency(client.projectValue)}
-                  </td>
-                  <td className="clients-table__align-right clients-table__muted">
-                    {client.lastActivity}
+          <table className="clients-table">
+            <thead>
+              <tr>
+                <th scope="col">Company</th>
+                <th scope="col">Contact</th>
+                <th scope="col">Status</th>
+                <th scope="col" className="clients-table__align-right">
+                  Project Value
+                </th>
+                <th scope="col" className="clients-table__align-right">
+                  Last Activity
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredClients.length > 0 ? (
+                filteredClients.map((client) => (
+                  <tr key={client.id}>
+                    <td>
+                      <div className="client-company">
+                        <span className="client-avatar" aria-hidden="true">
+                          {getInitials(client.company)}
+                        </span>
+                        <span className="client-company__name">{client.company}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="client-contact">
+                        <span className="client-contact__name">{client.contact}</span>
+                        <span className="client-contact__email">{client.email}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <Badge {...client.status} />
+                    </td>
+                    <td className="clients-table__align-right clients-table__value">
+                      {formatCurrency(client.projectValue)}
+                    </td>
+                    <td className="clients-table__align-right clients-table__muted">
+                      {client.lastActivity}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="clients-table__empty">
+                    <span className="clients-table__empty-title">No clients found</span>
+                    <span className="clients-table__empty-hint">
+                      No results for &ldquo;{trimmedQuery}&rdquo;. Try another
+                      company, contact, or email.
+                    </span>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="clients-table__empty">
-                  No clients match your search.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
         </div>
 
         <footer className="clients-table__footer">
-          Showing {filteredClients.length} of {CLIENTS.length} clients
+          Showing {filteredClients.length} of {clients.length} clients
         </footer>
       </div>
+
+      <AddClientModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleAddClient}
+      />
     </div>
   )
 }
