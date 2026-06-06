@@ -113,6 +113,34 @@ export function IconPlus(props) {
   )
 }
 
+export function IconLayoutDashboard(props) {
+  return (
+    <svg {...iconProps} {...props}>
+      <rect x="2.5" y="2.5" width="4.75" height="4.75" rx="1" />
+      <rect x="8.75" y="2.5" width="4.75" height="4.75" rx="1" />
+      <rect x="2.5" y="8.75" width="4.75" height="4.75" rx="1" />
+      <rect x="8.75" y="8.75" width="4.75" height="4.75" rx="1" />
+    </svg>
+  )
+}
+
+export function IconSettings(props) {
+  return (
+    <svg {...iconProps} {...props}>
+      <circle cx="8" cy="8" r="2" />
+      <path d="M8 2.75v1.5M8 11.75v1.5M2.75 8H4.25M11.75 8h1.5M4.34 4.34l1.06 1.06M10.6 10.6l1.06 1.06M4.34 11.66l1.06-1.06M10.6 5.4l1.06-1.06" />
+    </svg>
+  )
+}
+
+export function IconChevronDown(props) {
+  return (
+    <svg {...iconProps} {...props}>
+      <path d="M4 6l4 4 4-4" />
+    </svg>
+  )
+}
+
 export function IconClock(props) {
   return (
     <svg {...iconProps} {...props}>

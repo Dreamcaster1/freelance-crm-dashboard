@@ -130,8 +130,8 @@ export default function AddClientModal({ isOpen, client, onClose, onSave }) {
           </h2>
           <p className="modal__description">
             {isEditing
-              ? 'Update this client’s details in your workspace.'
-              : 'Add a new client to your workspace.'}
+              ? 'Update this client account and project details.'
+              : 'Add a new client account to your studio.'}
           </p>
         </header>
 

@@ -151,7 +151,7 @@ export default function AddTaskModal({ isOpen, task, onClose, onSave }) {
           <p className="modal__description">
             {isEditing
               ? 'Update this task’s details and tracking information.'
-              : 'Create a task and track it across your client work.'}
+              : 'Add a deliverable and keep it tied to the right client build.'}
           </p>
         </header>
 

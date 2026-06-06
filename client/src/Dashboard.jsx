@@ -13,28 +13,28 @@ const STATS = [
   {
     label: 'Active clients',
     value: '12',
-    detail: '+2 this month',
+    detail: '2 new inquiries this month',
     icon: IconUsers,
     tone: 'accent',
   },
   {
     label: 'Open tasks',
     value: '8',
-    detail: '3 due this week',
+    detail: '3 shipping this week',
     icon: IconCheckSquare,
     tone: 'default',
   },
   {
-    label: 'Revenue',
+    label: 'Billed this month',
     value: '$4,200',
-    detail: '+18% vs last month',
+    detail: '+18% vs April',
     icon: IconDollar,
     tone: 'success',
   },
   {
-    label: 'Active projects',
+    label: 'Live builds',
     value: '6',
-    detail: '2 awaiting review',
+    detail: '2 in client review',
     icon: IconBriefcase,
     tone: 'default',
   },
@@ -43,41 +43,41 @@ const STATS = [
 const RECENT_ACTIVITY = [
   {
     id: 'a1',
-    type: 'invoice',
-    title: 'Invoice #1042 sent',
-    client: 'Northline Studio',
+    type: 'project',
+    title: 'Staging deploy pushed for sprint 4',
+    client: 'Relay Apps',
     time: '2 hours ago',
-    badge: { label: 'Sent', variant: 'info' },
+    badge: { label: 'Deployed', variant: 'info' },
   },
   {
     id: 'a2',
     type: 'task',
-    title: 'Homepage mockups approved',
-    client: 'Brightpath Labs',
+    title: 'Homepage copy approved',
+    client: 'Harbor & Co.',
     time: '5 hours ago',
-    badge: { label: 'Completed', variant: 'success' },
+    badge: { label: 'Signed off', variant: 'success' },
   },
   {
     id: 'a3',
     type: 'message',
-    title: 'Kickoff notes shared',
-    client: 'Harbor & Co.',
+    title: 'Checkout bug report from QA',
+    client: 'Patchwork Foods',
     time: 'Yesterday',
-    badge: { label: 'Client', variant: 'neutral' },
+    badge: { label: 'Support', variant: 'neutral' },
   },
   {
     id: 'a4',
     type: 'project',
-    title: 'Brand refresh moved to In Review',
-    client: 'Elmwood Digital',
+    title: 'DNS cutover completed',
+    client: 'Vaultline Security',
     time: 'Yesterday',
-    badge: { label: 'In review', variant: 'warning' },
+    badge: { label: 'Live', variant: 'success' },
   },
   {
     id: 'a5',
     type: 'invoice',
-    title: 'Retainer payment received',
-    client: 'Summit Health',
+    title: 'June retainer marked paid',
+    client: 'Kite & Anchor',
     time: 'Jun 4',
     badge: { label: 'Paid', variant: 'success' },
   },
@@ -86,23 +86,23 @@ const RECENT_ACTIVITY = [
 const UPCOMING_TASKS = [
   {
     id: 't1',
-    title: 'Deliver wireframes v2',
-    client: 'Northline Studio',
+    title: 'Ship homepage v2 to staging',
+    client: 'Relay Apps',
     due: 'Tomorrow',
     badge: { label: 'High', variant: 'danger' },
     status: { label: 'In progress', variant: 'info' },
   },
   {
     id: 't2',
-    title: 'Send Q2 progress report',
-    client: 'Brightpath Labs',
+    title: 'Send sprint recap and loom walkthrough',
+    client: 'Patchwork Foods',
     due: 'Jun 8',
     badge: { label: 'Medium', variant: 'warning' },
     status: { label: 'Pending', variant: 'neutral' },
   },
   {
     id: 't3',
-    title: 'Review contract amendments',
+    title: 'Review revised scope for Phase 2',
     client: 'Harbor & Co.',
     due: 'Jun 9',
     badge: { label: 'Medium', variant: 'warning' },
@@ -110,16 +110,16 @@ const UPCOMING_TASKS = [
   },
   {
     id: 't4',
-    title: 'Finalize logo exports',
-    client: 'Elmwood Digital',
+    title: 'Export production assets for launch',
+    client: 'Vaultline Security',
     due: 'Jun 10',
     badge: { label: 'Low', variant: 'neutral' },
     status: { label: 'Pending', variant: 'neutral' },
   },
   {
     id: 't5',
-    title: 'Schedule discovery call',
-    client: 'Summit Health',
+    title: 'Book content walkthrough with marketing',
+    client: 'Kite & Anchor',
     due: 'Jun 12',
     badge: { label: 'Low', variant: 'neutral' },
     status: { label: 'Scheduled', variant: 'success' },
@@ -160,7 +160,7 @@ export default function Dashboard() {
               <div>
                 <h2 className="dashboard-panel__title">Recent activity</h2>
                 <p className="dashboard-panel__subtitle">
-                  Latest updates across clients and projects
+                  Deploys, approvals, and client touchpoints
                 </p>
               </div>
             </div>
@@ -195,7 +195,7 @@ export default function Dashboard() {
               <div>
                 <h2 className="dashboard-panel__title">Upcoming tasks</h2>
                 <p className="dashboard-panel__subtitle">
-                  Due in the next seven days
+                  Due before the end of the week
                 </p>
               </div>
             </div>

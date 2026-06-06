@@ -55,7 +55,7 @@ export default function Settings() {
       >
         <SettingsSection
           title="Profile"
-          description="Manage your personal account details and how others see you."
+          description="How you appear on proposals, invoices, and shared client views."
         >
           <div className="settings-profile">
             <div className="settings-profile__avatar" aria-hidden="true">
@@ -63,7 +63,7 @@ export default function Settings() {
             </div>
             <div className="settings-profile__meta">
               <span className="settings-profile__name">Alex Morgan</span>
-              <span className="settings-profile__email">alex@freelance.dev</span>
+              <span className="settings-profile__email">alex@clearline.studio</span>
               <button type="button" className="btn btn--secondary btn--sm">
                 Change photo
               </button>
@@ -92,7 +92,7 @@ export default function Settings() {
               id="profile-email"
               type="email"
               className="field-input"
-              defaultValue="alex@freelance.dev"
+              defaultValue="alex@clearline.studio"
             />
           </SettingsField>
 
@@ -105,14 +105,14 @@ export default function Settings() {
               id="profile-title"
               type="text"
               className="field-input"
-              defaultValue="Independent Designer"
+              defaultValue="Lead Developer"
             />
           </SettingsField>
         </SettingsSection>
 
         <SettingsSection
           title="Workspace"
-          description="Configure defaults for your freelance CRM workspace."
+          description="Defaults for how Clearline Studio runs inside ClientFlow."
         >
           <SettingsField
             label="Workspace name"
@@ -123,7 +123,7 @@ export default function Settings() {
               id="workspace-name"
               type="text"
               className="field-input"
-              defaultValue="Personal"
+              defaultValue="Clearline Studio"
             />
           </SettingsField>
 
@@ -133,12 +133,12 @@ export default function Settings() {
             htmlFor="workspace-slug"
           >
             <div className="field-input-group">
-              <span className="field-input-group__prefix">crm.app/</span>
+              <span className="field-input-group__prefix">clientflow.app/</span>
               <input
                 id="workspace-slug"
                 type="text"
                 className="field-input field-input--grouped"
-                defaultValue="alex-morgan"
+                defaultValue="clearline-studio"
               />
             </div>
           </SettingsField>
@@ -178,7 +178,7 @@ export default function Settings() {
 
         <SettingsSection
           title="Notification preferences"
-          description="Choose what you want to be notified about and how."
+          description="Control which studio events land in your inbox."
         >
           <SettingsToggle
             id="notify-email"
@@ -201,7 +201,7 @@ export default function Settings() {
           <SettingsToggle
             id="notify-weekly"
             label="Weekly summary"
-            hint="A digest of tasks, revenue, and client activity."
+            hint="A Friday digest of shipped work, billing, and client movement."
             defaultChecked
           />
           <SettingsToggle
@@ -213,7 +213,7 @@ export default function Settings() {
 
         <SettingsSection
           title="Appearance"
-          description="Customize how Freelance CRM looks on your device."
+          description="Tune how ClientFlow looks on your screen."
         >
           <SettingsField
             label="Theme"

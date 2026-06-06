@@ -14,8 +14,8 @@ const FILTERS = [
 const INITIAL_TASKS = [
   {
     id: 't1',
-    name: 'Deliver wireframes v2',
-    client: 'Northline Studio',
+    name: 'Ship homepage v2 to staging',
+    client: 'Relay Apps',
     status: 'in-progress',
     statusBadge: { label: 'In Progress', variant: 'info' },
     priority: { label: 'High', variant: 'danger' },
@@ -23,8 +23,8 @@ const INITIAL_TASKS = [
   },
   {
     id: 't2',
-    name: 'Send Q2 progress report',
-    client: 'Brightpath Labs',
+    name: 'Send sprint recap and loom walkthrough',
+    client: 'Patchwork Foods',
     status: 'pending',
     statusBadge: { label: 'Pending', variant: 'neutral' },
     priority: { label: 'Medium', variant: 'warning' },
@@ -32,7 +32,7 @@ const INITIAL_TASKS = [
   },
   {
     id: 't3',
-    name: 'Review contract amendments',
+    name: 'Review revised scope for Phase 2',
     client: 'Harbor & Co.',
     status: 'in-progress',
     statusBadge: { label: 'In Progress', variant: 'info' },
@@ -41,8 +41,8 @@ const INITIAL_TASKS = [
   },
   {
     id: 't4',
-    name: 'Finalize logo exports',
-    client: 'Elmwood Digital',
+    name: 'Export production assets for launch',
+    client: 'Vaultline Security',
     status: 'pending',
     statusBadge: { label: 'Pending', variant: 'neutral' },
     priority: { label: 'Low', variant: 'neutral' },
@@ -50,8 +50,8 @@ const INITIAL_TASKS = [
   },
   {
     id: 't5',
-    name: 'Schedule discovery call',
-    client: 'Summit Health',
+    name: 'Book content walkthrough with marketing',
+    client: 'Kite & Anchor',
     status: 'pending',
     statusBadge: { label: 'Pending', variant: 'neutral' },
     priority: { label: 'Low', variant: 'neutral' },
@@ -59,8 +59,8 @@ const INITIAL_TASKS = [
   },
   {
     id: 't6',
-    name: 'Build component library',
-    client: 'Northline Studio',
+    name: 'Build shared component library',
+    client: 'Relay Apps',
     status: 'in-progress',
     statusBadge: { label: 'In Progress', variant: 'info' },
     priority: { label: 'High', variant: 'danger' },
@@ -68,7 +68,7 @@ const INITIAL_TASKS = [
   },
   {
     id: 't7',
-    name: 'Prepare onboarding deck',
+    name: 'Draft proposal for analytics dashboard',
     client: 'Lumen Analytics',
     status: 'in-progress',
     statusBadge: { label: 'In Progress', variant: 'info' },
@@ -77,7 +77,7 @@ const INITIAL_TASKS = [
   },
   {
     id: 't8',
-    name: 'Update sprint backlog',
+    name: 'Scope one-page pitch site',
     client: 'Atlas Ventures',
     status: 'pending',
     statusBadge: { label: 'Pending', variant: 'neutral' },
@@ -86,8 +86,8 @@ const INITIAL_TASKS = [
   },
   {
     id: 't9',
-    name: 'Homepage mockups approved',
-    client: 'Brightpath Labs',
+    name: 'Homepage responsive QA passed',
+    client: 'Patchwork Foods',
     status: 'completed',
     statusBadge: { label: 'Completed', variant: 'success' },
     priority: { label: 'High', variant: 'danger' },
@@ -95,8 +95,8 @@ const INITIAL_TASKS = [
   },
   {
     id: 't10',
-    name: 'Invoice #1042 sent',
-    client: 'Northline Studio',
+    name: 'Invoice #1042 sent for May retainer',
+    client: 'Relay Apps',
     status: 'completed',
     statusBadge: { label: 'Completed', variant: 'success' },
     priority: { label: 'Medium', variant: 'warning' },
@@ -104,8 +104,8 @@ const INITIAL_TASKS = [
   },
   {
     id: 't11',
-    name: 'Retainer payment follow-up',
-    client: 'Summit Health',
+    name: 'Confirm June retainer payment',
+    client: 'Kite & Anchor',
     status: 'completed',
     statusBadge: { label: 'Completed', variant: 'success' },
     priority: { label: 'Low', variant: 'neutral' },
@@ -113,8 +113,8 @@ const INITIAL_TASKS = [
   },
   {
     id: 't12',
-    name: 'Brand guidelines handoff',
-    client: 'Elmwood Digital',
+    name: 'Hand off design tokens to dev',
+    client: 'Vaultline Security',
     status: 'completed',
     statusBadge: { label: 'Completed', variant: 'success' },
     priority: { label: 'Medium', variant: 'warning' },
@@ -122,8 +122,8 @@ const INITIAL_TASKS = [
   },
   {
     id: 't13',
-    name: 'Reconcile May expenses',
-    client: 'Internal',
+    name: 'Reconcile May contractor payouts',
+    client: 'Clearline Studio',
     status: 'completed',
     statusBadge: { label: 'Completed', variant: 'success' },
     priority: { label: 'Low', variant: 'neutral' },
@@ -131,7 +131,7 @@ const INITIAL_TASKS = [
   },
   {
     id: 't14',
-    name: 'Draft case study outline',
+    name: 'Wire store locator map integration',
     client: 'Fieldstone Retail',
     status: 'in-progress',
     statusBadge: { label: 'In Progress', variant: 'info' },
