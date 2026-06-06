@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import AddTaskModal from './AddTaskModal'
 import Badge from './Badge'
+import ConfirmModal from './ConfirmModal'
 import { IconPlus } from './icons'
 
 const FILTERS = [
@@ -143,6 +144,8 @@ export default function Tasks() {
   const [tasks, setTasks] = useState(INITIAL_TASKS)
   const [activeFilter, setActiveFilter] = useState('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState(null)
+  const [deletingTask, setDeletingTask] = useState(null)
 
   const filteredTasks = useMemo(() => {
     if (activeFilter === 'all') return tasks
@@ -158,9 +161,45 @@ export default function Tasks() {
     }
   }, [tasks])
 
-  function handleAddTask(task) {
-    setTasks((current) => [task, ...current])
+  function openAddModal() {
+    setEditingTask(null)
+    setIsModalOpen(true)
+  }
+
+  function openEditModal(task) {
+    setEditingTask(task)
+    setIsModalOpen(true)
+  }
+
+  function closeModal() {
     setIsModalOpen(false)
+    setEditingTask(null)
+  }
+
+  function handleSaveTask(task) {
+    if (editingTask) {
+      setTasks((current) =>
+        current.map((item) => (item.id === task.id ? task : item)),
+      )
+    } else {
+      setTasks((current) => [task, ...current])
+    }
+    closeModal()
+  }
+
+  function openDeleteModal(task) {
+    setDeletingTask(task)
+  }
+
+  function closeDeleteModal() {
+    setDeletingTask(null)
+  }
+
+  function confirmDeleteTask() {
+    if (!deletingTask) return
+
+    setTasks((current) => current.filter((item) => item.id !== deletingTask.id))
+    closeDeleteModal()
   }
 
   return (
@@ -183,7 +222,7 @@ export default function Tasks() {
         <button
           type="button"
           className="btn btn--primary"
-          onClick={() => setIsModalOpen(true)}
+          onClick={openAddModal}
         >
           <IconPlus />
           New Task
@@ -201,6 +240,9 @@ export default function Tasks() {
                 <th scope="col">Priority</th>
                 <th scope="col" className="tasks-table__align-right">
                   Due Date
+                </th>
+                <th scope="col" className="tasks-table__align-right">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -227,11 +269,29 @@ export default function Tasks() {
                     <td className="tasks-table__align-right tasks-table__due">
                       {task.dueDate}
                     </td>
+                    <td className="tasks-table__align-right">
+                      <div className="table-actions">
+                        <button
+                          type="button"
+                          className="btn btn--secondary btn--sm"
+                          onClick={() => openEditModal(task)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--danger btn--sm"
+                          onClick={() => openDeleteModal(task)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="tasks-table__empty">
+                  <td colSpan={6} className="tasks-table__empty">
                     No tasks match this filter.
                   </td>
                 </tr>
@@ -247,8 +307,21 @@ export default function Tasks() {
 
       <AddTaskModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleAddTask}
+        task={editingTask}
+        onClose={closeModal}
+        onSave={handleSaveTask}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(deletingTask)}
+        title="Delete task?"
+        description={
+          deletingTask
+            ? `"${deletingTask.name}" will be permanently removed from your task list. This action cannot be undone.`
+            : ''
+        }
+        onClose={closeDeleteModal}
+        onConfirm={confirmDeleteTask}
       />
     </div>
   )

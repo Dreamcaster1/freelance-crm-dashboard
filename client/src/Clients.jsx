@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import AddClientModal from './AddClientModal'
 import Badge from './Badge'
+import ConfirmModal from './ConfirmModal'
 import { IconPlus, IconSearch } from './icons'
 
 const INITIAL_CLIENTS = [
@@ -148,6 +149,8 @@ export default function Clients() {
   const [clients, setClients] = useState(INITIAL_CLIENTS)
   const [query, setQuery] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingClient, setEditingClient] = useState(null)
+  const [deletingClient, setDeletingClient] = useState(null)
   const trimmedQuery = query.trim()
 
   const filteredClients = useMemo(
@@ -155,9 +158,47 @@ export default function Clients() {
     [clients, query],
   )
 
-  function handleAddClient(client) {
-    setClients((current) => [client, ...current])
+  function openAddModal() {
+    setEditingClient(null)
+    setIsModalOpen(true)
+  }
+
+  function openEditModal(client) {
+    setEditingClient(client)
+    setIsModalOpen(true)
+  }
+
+  function closeModal() {
     setIsModalOpen(false)
+    setEditingClient(null)
+  }
+
+  function handleSaveClient(client) {
+    if (editingClient) {
+      setClients((current) =>
+        current.map((item) => (item.id === client.id ? client : item)),
+      )
+    } else {
+      setClients((current) => [client, ...current])
+    }
+    closeModal()
+  }
+
+  function openDeleteModal(client) {
+    setDeletingClient(client)
+  }
+
+  function closeDeleteModal() {
+    setDeletingClient(null)
+  }
+
+  function confirmDeleteClient() {
+    if (!deletingClient) return
+
+    setClients((current) =>
+      current.filter((item) => item.id !== deletingClient.id),
+    )
+    closeDeleteModal()
   }
 
   return (
@@ -177,7 +218,7 @@ export default function Clients() {
         <button
           type="button"
           className="btn btn--primary"
-          onClick={() => setIsModalOpen(true)}
+          onClick={openAddModal}
         >
           <IconPlus />
           Add Client
@@ -197,6 +238,9 @@ export default function Clients() {
                 </th>
                 <th scope="col" className="clients-table__align-right">
                   Last Activity
+                </th>
+                <th scope="col" className="clients-table__align-right">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -227,11 +271,29 @@ export default function Clients() {
                     <td className="clients-table__align-right clients-table__muted">
                       {client.lastActivity}
                     </td>
+                    <td className="clients-table__align-right">
+                      <div className="table-actions">
+                        <button
+                          type="button"
+                          className="btn btn--secondary btn--sm"
+                          onClick={() => openEditModal(client)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--danger btn--sm"
+                          onClick={() => openDeleteModal(client)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="clients-table__empty">
+                  <td colSpan={6} className="clients-table__empty">
                     <span className="clients-table__empty-title">No clients found</span>
                     <span className="clients-table__empty-hint">
                       No results for &ldquo;{trimmedQuery}&rdquo;. Try another
@@ -251,8 +313,21 @@ export default function Clients() {
 
       <AddClientModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleAddClient}
+        client={editingClient}
+        onClose={closeModal}
+        onSave={handleSaveClient}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(deletingClient)}
+        title="Delete client?"
+        description={
+          deletingClient
+            ? `${deletingClient.company} will be permanently removed from your client list. This action cannot be undone.`
+            : ''
+        }
+        onClose={closeDeleteModal}
+        onConfirm={confirmDeleteClient}
       />
     </div>
   )

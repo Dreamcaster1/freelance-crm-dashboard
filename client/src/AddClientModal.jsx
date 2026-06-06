@@ -25,6 +25,22 @@ function getStatusBadge(statusValue) {
   }
 }
 
+function getStatusValue(status) {
+  const option = STATUS_OPTIONS.find((item) => item.label === status.label)
+  return option?.value ?? 'active'
+}
+
+function clientToForm(client) {
+  return {
+    company: client.company,
+    contact: client.contact,
+    email: client.email,
+    status: getStatusValue(client.status),
+    projectValue: client.projectValue ? String(client.projectValue) : '',
+    lastActivity: client.lastActivity,
+  }
+}
+
 function validateForm(form) {
   const errors = {}
 
@@ -45,21 +61,22 @@ function validateForm(form) {
   return errors
 }
 
-export default function AddClientModal({ isOpen, onClose, onSave }) {
+export default function AddClientModal({ isOpen, client, onClose, onSave }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
+  const isEditing = Boolean(client)
 
   useEffect(() => {
     if (!isOpen) return
 
-    setForm(EMPTY_FORM)
+    setForm(client ? clientToForm(client) : EMPTY_FORM)
     setErrors({})
     document.body.style.overflow = 'hidden'
 
     return () => {
       document.body.style.overflow = ''
     }
-  }, [isOpen])
+  }, [isOpen, client])
 
   if (!isOpen) return null
 
@@ -88,7 +105,7 @@ export default function AddClientModal({ isOpen, onClose, onSave }) {
       : 0
 
     onSave({
-      id: `c${Date.now()}`,
+      id: client?.id ?? `c${Date.now()}`,
       company: form.company.trim(),
       contact: form.contact.trim(),
       email: form.email.trim(),
@@ -104,15 +121,17 @@ export default function AddClientModal({ isOpen, onClose, onSave }) {
         className="modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="add-client-title"
+        aria-labelledby="client-modal-title"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="modal__header">
-          <h2 id="add-client-title" className="modal__title">
-            Add Client
+          <h2 id="client-modal-title" className="modal__title">
+            {isEditing ? 'Edit Client' : 'Add Client'}
           </h2>
           <p className="modal__description">
-            Add a new client to your workspace.
+            {isEditing
+              ? 'Update this client’s details in your workspace.'
+              : 'Add a new client to your workspace.'}
           </p>
         </header>
 

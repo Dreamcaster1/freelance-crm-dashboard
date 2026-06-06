@@ -36,6 +36,11 @@ function getPriorityBadge(priorityValue) {
   }
 }
 
+function getPriorityValue(priority) {
+  const option = PRIORITY_OPTIONS.find((item) => item.label === priority.label)
+  return option?.value ?? 'medium'
+}
+
 function formatDueDate(dateValue) {
   if (!dateValue) return '—'
 
@@ -45,6 +50,25 @@ function formatDueDate(dateValue) {
     day: 'numeric',
     year: 'numeric',
   })
+}
+
+function parseDueDateToInput(dueDate) {
+  if (!dueDate || dueDate === '—') return ''
+
+  const parsed = new Date(dueDate)
+  if (Number.isNaN(parsed.getTime())) return ''
+
+  return parsed.toISOString().slice(0, 10)
+}
+
+function taskToForm(task) {
+  return {
+    name: task.name,
+    client: task.client,
+    status: task.status,
+    priority: getPriorityValue(task.priority),
+    dueDate: parseDueDateToInput(task.dueDate),
+  }
 }
 
 function validateForm(form) {
@@ -61,21 +85,22 @@ function validateForm(form) {
   return errors
 }
 
-export default function AddTaskModal({ isOpen, onClose, onSave }) {
+export default function AddTaskModal({ isOpen, task, onClose, onSave }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
+  const isEditing = Boolean(task)
 
   useEffect(() => {
     if (!isOpen) return
 
-    setForm(EMPTY_FORM)
+    setForm(task ? taskToForm(task) : EMPTY_FORM)
     setErrors({})
     document.body.style.overflow = 'hidden'
 
     return () => {
       document.body.style.overflow = ''
     }
-  }, [isOpen])
+  }, [isOpen, task])
 
   if (!isOpen) return null
 
@@ -100,7 +125,7 @@ export default function AddTaskModal({ isOpen, onClose, onSave }) {
     }
 
     onSave({
-      id: `t${Date.now()}`,
+      id: task?.id ?? `t${Date.now()}`,
       name: form.name.trim(),
       client: form.client.trim(),
       status: form.status,
@@ -116,15 +141,17 @@ export default function AddTaskModal({ isOpen, onClose, onSave }) {
         className="modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="add-task-title"
+        aria-labelledby="task-modal-title"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="modal__header">
-          <h2 id="add-task-title" className="modal__title">
-            New Task
+          <h2 id="task-modal-title" className="modal__title">
+            {isEditing ? 'Edit Task' : 'New Task'}
           </h2>
           <p className="modal__description">
-            Create a task and track it across your client work.
+            {isEditing
+              ? 'Update this task’s details and tracking information.'
+              : 'Create a task and track it across your client work.'}
           </p>
         </header>
 
