@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { formatDueDate, parseDueDateToInput } from './utils/format'
 
 const STATUS_OPTIONS = [
   { value: 'in-progress', label: 'In Progress', variant: 'info' },
@@ -39,26 +40,6 @@ function getPriorityBadge(priorityValue) {
 function getPriorityValue(priority) {
   const option = PRIORITY_OPTIONS.find((item) => item.label === priority.label)
   return option?.value ?? 'medium'
-}
-
-function formatDueDate(dateValue) {
-  if (!dateValue) return '—'
-
-  const date = new Date(`${dateValue}T00:00:00`)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
-function parseDueDateToInput(dueDate) {
-  if (!dueDate || dueDate === '—') return ''
-
-  const parsed = new Date(dueDate)
-  if (Number.isNaN(parsed.getTime())) return ''
-
-  return parsed.toISOString().slice(0, 10)
 }
 
 function taskToForm(task) {

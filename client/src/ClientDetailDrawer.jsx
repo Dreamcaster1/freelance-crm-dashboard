@@ -2,24 +2,7 @@ import { useEffect } from 'react'
 import Badge from './Badge'
 import { CLIENT_ACTIVITY, DEFAULT_ACTIVITY } from './data/clients'
 import { ActivityIcon, IconX } from './icons'
-
-function getInitials(company) {
-  return company
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase()
-}
-
-function formatCurrency(amount) {
-  if (amount === 0) return '—'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+import { formatCurrency, getInitials } from './utils/format'
 
 function getClientActivity(clientId) {
   return CLIENT_ACTIVITY[clientId] ?? DEFAULT_ACTIVITY

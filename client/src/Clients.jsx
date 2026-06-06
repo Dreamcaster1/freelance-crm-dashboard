@@ -5,24 +5,7 @@ import ClientDetailDrawer from './ClientDetailDrawer'
 import ConfirmModal from './ConfirmModal'
 import { INITIAL_CLIENTS } from './data/clients'
 import { IconPlus, IconSearch } from './icons'
-
-function getInitials(company) {
-  return company
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase()
-}
-
-function formatCurrency(amount) {
-  if (amount === 0) return '—'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+import { formatCurrency, getInitials } from './utils/format'
 
 function filterClients(clients, query) {
   const normalized = query.trim().toLowerCase()
