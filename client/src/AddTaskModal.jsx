@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import useOverlayLock from './hooks/useOverlayLock'
 import { formatDueDate, parseDueDateToInput } from './utils/format'
 
 const STATUS_OPTIONS = [
@@ -71,16 +72,13 @@ export default function AddTaskModal({ isOpen, task, onClose, onSave }) {
   const [errors, setErrors] = useState({})
   const isEditing = Boolean(task)
 
+  useOverlayLock(isOpen)
+
   useEffect(() => {
     if (!isOpen) return
 
     setForm(task ? taskToForm(task) : EMPTY_FORM)
     setErrors({})
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = ''
-    }
   }, [isOpen, task])
 
   if (!isOpen) return null

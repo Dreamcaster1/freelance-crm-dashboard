@@ -46,9 +46,6 @@ export default function Clients() {
   function closeModal() {
     setIsModalOpen(false)
     setEditingClient(null)
-    if (selectedClient) {
-      document.body.style.overflow = 'hidden'
-    }
   }
 
   function handleSaveClient(client) {
@@ -71,9 +68,6 @@ export default function Clients() {
 
   function closeDeleteModal() {
     setDeletingClient(null)
-    if (selectedClient) {
-      document.body.style.overflow = 'hidden'
-    }
   }
 
   function confirmDeleteClient() {

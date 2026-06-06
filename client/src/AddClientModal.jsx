@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import useOverlayLock from './hooks/useOverlayLock'
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Active', variant: 'success' },
@@ -66,16 +67,13 @@ export default function AddClientModal({ isOpen, client, onClose, onSave }) {
   const [errors, setErrors] = useState({})
   const isEditing = Boolean(client)
 
+  useOverlayLock(isOpen)
+
   useEffect(() => {
     if (!isOpen) return
 
     setForm(client ? clientToForm(client) : EMPTY_FORM)
     setErrors({})
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = ''
-    }
   }, [isOpen, client])
 
   if (!isOpen) return null

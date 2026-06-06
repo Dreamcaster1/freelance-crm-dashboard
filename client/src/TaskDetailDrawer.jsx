@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import Badge from './Badge'
+import useOverlayLock from './hooks/useOverlayLock'
 import { DEFAULT_DETAILS, TASK_DETAILS } from './data/tasks'
 import { ActivityIcon, IconX } from './icons'
 
@@ -8,10 +9,10 @@ function getTaskDetails(taskId) {
 }
 
 export default function TaskDetailDrawer({ task, onClose, onEdit, onDelete }) {
+  useOverlayLock(Boolean(task))
+
   useEffect(() => {
     if (!task) return undefined
-
-    document.body.style.overflow = 'hidden'
 
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
@@ -22,7 +23,6 @@ export default function TaskDetailDrawer({ task, onClose, onEdit, onDelete }) {
     window.addEventListener('keydown', handleKeyDown)
 
     return () => {
-      document.body.style.overflow = ''
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [task, onClose])

@@ -48,9 +48,6 @@ export default function Tasks() {
   function closeModal() {
     setIsModalOpen(false)
     setEditingTask(null)
-    if (selectedTask) {
-      document.body.style.overflow = 'hidden'
-    }
   }
 
   function handleSaveTask(task) {
@@ -71,9 +68,6 @@ export default function Tasks() {
 
   function closeDeleteModal() {
     setDeletingTask(null)
-    if (selectedTask) {
-      document.body.style.overflow = 'hidden'
-    }
   }
 
   function confirmDeleteTask() {

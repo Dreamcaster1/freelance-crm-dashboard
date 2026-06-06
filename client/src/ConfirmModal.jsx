@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import useOverlayLock from './hooks/useOverlayLock'
 
 export default function ConfirmModal({
   isOpen,
@@ -8,15 +8,7 @@ export default function ConfirmModal({
   onClose,
   onConfirm,
 }) {
-  useEffect(() => {
-    if (!isOpen) return
-
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isOpen])
+  useOverlayLock(isOpen)
 
   if (!isOpen) return null
 

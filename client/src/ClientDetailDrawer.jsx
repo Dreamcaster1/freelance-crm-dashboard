@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import Badge from './Badge'
+import useOverlayLock from './hooks/useOverlayLock'
 import { CLIENT_ACTIVITY, DEFAULT_ACTIVITY } from './data/clients'
 import { ActivityIcon, IconX } from './icons'
 import { formatCurrency, getInitials } from './utils/format'
@@ -9,10 +10,10 @@ function getClientActivity(clientId) {
 }
 
 export default function ClientDetailDrawer({ client, onClose, onEdit, onDelete }) {
+  useOverlayLock(Boolean(client))
+
   useEffect(() => {
     if (!client) return undefined
-
-    document.body.style.overflow = 'hidden'
 
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
@@ -23,7 +24,6 @@ export default function ClientDetailDrawer({ client, onClose, onEdit, onDelete }
     window.addEventListener('keydown', handleKeyDown)
 
     return () => {
-      document.body.style.overflow = ''
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [client, onClose])
