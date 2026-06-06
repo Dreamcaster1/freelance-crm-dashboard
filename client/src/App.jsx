@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Clients from './Clients'
 import Dashboard from './Dashboard'
+import Settings from './Settings'
+import Tasks from './Tasks'
 import './App.css'
 
 const NAV_ITEMS = [
@@ -21,41 +23,11 @@ const PAGES = {
   },
   tasks: {
     title: 'Tasks',
-    description: 'Track what needs to be done.',
-    stats: [
-      { label: 'In progress', value: '5' },
-      { label: 'Due soon', value: '3' },
-      { label: 'Completed', value: '42' },
-    ],
-    cards: [
-      {
-        title: 'Task board',
-        body: 'Organize work by status, priority, and due date.',
-      },
-      {
-        title: 'Focus list',
-        body: 'Your highest-priority items for today and this week.',
-      },
-    ],
+    description: 'Track deliverables, deadlines, and priorities across clients.',
   },
   settings: {
     title: 'Settings',
-    description: 'Configure your workspace.',
-    stats: [
-      { label: 'Workspace', value: 'Personal' },
-      { label: 'Plan', value: 'Free' },
-      { label: 'Members', value: '1' },
-    ],
-    cards: [
-      {
-        title: 'General',
-        body: 'Profile, timezone, and display preferences for your account.',
-      },
-      {
-        title: 'Notifications',
-        body: 'Email and in-app alerts for tasks, clients, and deadlines.',
-      },
-    ],
+    description: 'Manage your profile, workspace, notifications, and security.',
   },
 }
 
@@ -103,26 +75,10 @@ function App() {
             <Dashboard />
           ) : activePage === 'clients' ? (
             <Clients />
+          ) : activePage === 'tasks' ? (
+            <Tasks />
           ) : (
-            <>
-              <section className="stats" aria-label="Summary">
-                {page.stats.map((stat) => (
-                  <article key={stat.label} className="stat-card">
-                    <span className="stat-label">{stat.label}</span>
-                    <span className="stat-value">{stat.value}</span>
-                  </article>
-                ))}
-              </section>
-
-              <section className="card-grid" aria-label="Content">
-                {page.cards.map((card) => (
-                  <article key={card.title} className="card">
-                    <h2 className="card-title">{card.title}</h2>
-                    <p className="card-body">{card.body}</p>
-                  </article>
-                ))}
-              </section>
-            </>
+            <Settings />
           )}
         </main>
       </div>

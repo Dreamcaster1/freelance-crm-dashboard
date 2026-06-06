@@ -166,6 +166,7 @@ export default function Clients() {
       </div>
 
       <div className="clients-table-card">
+        <div className="table-scroll">
         <table className="clients-table">
           <thead>
             <tr>
@@ -218,6 +219,7 @@ export default function Clients() {
             )}
           </tbody>
         </table>
+        </div>
 
         <footer className="clients-table__footer">
           Showing {filteredClients.length} of {CLIENTS.length} clients
