@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import useOverlayLock from './hooks/useOverlayLock'
 import { formatDueDate, parseDueDateToInput } from './utils/format'
 
@@ -68,20 +68,24 @@ function validateForm(form) {
 }
 
 export default function AddTaskModal({ isOpen, task, onClose, onSave }) {
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [errors, setErrors] = useState({})
-  const isEditing = Boolean(task)
-
   useOverlayLock(isOpen)
 
-  useEffect(() => {
-    if (!isOpen) return
-
-    setForm(task ? taskToForm(task) : EMPTY_FORM)
-    setErrors({})
-  }, [isOpen, task])
-
   if (!isOpen) return null
+
+  return (
+    <TaskModalContent
+      key={task?.id ?? 'new-task'}
+      task={task}
+      onClose={onClose}
+      onSave={onSave}
+    />
+  )
+}
+
+function TaskModalContent({ task, onClose, onSave }) {
+  const [form, setForm] = useState(() => (task ? taskToForm(task) : EMPTY_FORM))
+  const [errors, setErrors] = useState({})
+  const isEditing = Boolean(task)
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }))

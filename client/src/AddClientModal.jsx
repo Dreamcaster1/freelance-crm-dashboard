@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import useOverlayLock from './hooks/useOverlayLock'
 
 const STATUS_OPTIONS = [
@@ -63,20 +63,26 @@ function validateForm(form) {
 }
 
 export default function AddClientModal({ isOpen, client, onClose, onSave }) {
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [errors, setErrors] = useState({})
-  const isEditing = Boolean(client)
-
   useOverlayLock(isOpen)
 
-  useEffect(() => {
-    if (!isOpen) return
-
-    setForm(client ? clientToForm(client) : EMPTY_FORM)
-    setErrors({})
-  }, [isOpen, client])
-
   if (!isOpen) return null
+
+  return (
+    <ClientModalContent
+      key={client?.id ?? 'new-client'}
+      client={client}
+      onClose={onClose}
+      onSave={onSave}
+    />
+  )
+}
+
+function ClientModalContent({ client, onClose, onSave }) {
+  const [form, setForm] = useState(() =>
+    client ? clientToForm(client) : EMPTY_FORM,
+  )
+  const [errors, setErrors] = useState({})
+  const isEditing = Boolean(client)
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
