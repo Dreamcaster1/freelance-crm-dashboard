@@ -5,6 +5,8 @@ import {
   IconUsers,
 } from '../icons'
 
+import { getTaskPriorityBadge } from '../utils/badges'
+
 export const STATS = [
   {
     label: 'Active clients',
@@ -85,7 +87,7 @@ export const UPCOMING_TASKS = [
     title: 'Ship homepage v2 to staging',
     client: 'Relay Apps',
     due: 'Tomorrow',
-    badge: { label: 'High', variant: 'danger' },
+    badge: getTaskPriorityBadge('high'),
     status: { label: 'In progress', variant: 'info' },
   },
   {
@@ -93,7 +95,7 @@ export const UPCOMING_TASKS = [
     title: 'Send sprint recap and loom walkthrough',
     client: 'Patchwork Foods',
     due: 'Jun 8',
-    badge: { label: 'Medium', variant: 'warning' },
+    badge: getTaskPriorityBadge('medium'),
     status: { label: 'Pending', variant: 'neutral' },
   },
   {
@@ -101,7 +103,7 @@ export const UPCOMING_TASKS = [
     title: 'Review revised scope for Phase 2',
     client: 'Harbor & Co.',
     due: 'Jun 9',
-    badge: { label: 'Medium', variant: 'warning' },
+    badge: getTaskPriorityBadge('medium'),
     status: { label: 'In progress', variant: 'info' },
   },
   {
@@ -109,7 +111,7 @@ export const UPCOMING_TASKS = [
     title: 'Export production assets for launch',
     client: 'Vaultline Security',
     due: 'Jun 10',
-    badge: { label: 'Low', variant: 'neutral' },
+    badge: getTaskPriorityBadge('low'),
     status: { label: 'Pending', variant: 'neutral' },
   },
   {
@@ -117,7 +119,7 @@ export const UPCOMING_TASKS = [
     title: 'Book content walkthrough with marketing',
     client: 'Kite & Anchor',
     due: 'Jun 12',
-    badge: { label: 'Low', variant: 'neutral' },
+    badge: getTaskPriorityBadge('low'),
     status: { label: 'Scheduled', variant: 'success' },
   },
 ]

@@ -1,8 +1,8 @@
-import { useEffect } from 'react'
 import Badge from './Badge'
-import useOverlayLock from './hooks/useOverlayLock'
+import Drawer from './Drawer'
 import { CLIENT_ACTIVITY, DEFAULT_ACTIVITY } from './data/clients'
-import { ActivityIcon, IconX } from './icons'
+import { ActivityIcon } from './icons'
+import { getClientStatusBadge } from './utils/badges'
 import { formatCurrency, getInitials } from './utils/format'
 
 function getClientActivity(clientId) {
@@ -10,131 +10,85 @@ function getClientActivity(clientId) {
 }
 
 export default function ClientDetailDrawer({ client, onClose, onEdit, onDelete }) {
-  useOverlayLock(Boolean(client))
-
-  useEffect(() => {
-    if (!client) return undefined
-
-    function handleKeyDown(event) {
-      if (event.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [client, onClose])
-
   if (!client) return null
 
   const activity = getClientActivity(client.id)
 
   return (
-    <div className="drawer-overlay" onClick={onClose}>
-      <aside
-        className="drawer drawer--client"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="client-drawer-title"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="drawer__header">
-          <div className="drawer__header-main">
-            <span className="drawer__avatar" aria-hidden="true">
-              {getInitials(client.company)}
-            </span>
-            <div className="drawer__header-copy">
-              <h2 id="client-drawer-title" className="drawer__title">
-                {client.company}
-              </h2>
-              <Badge {...client.status} />
-            </div>
+    <Drawer
+      onClose={onClose}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      item={client}
+      variant="client"
+      titleId="client-drawer-title"
+      closeLabel="Close client details"
+      header={
+        <>
+          <span className="drawer__avatar" aria-hidden="true">
+            {getInitials(client.company)}
+          </span>
+          <div className="drawer__header-copy">
+            <h2 id="client-drawer-title" className="drawer__title">
+              {client.company}
+            </h2>
+            <Badge {...getClientStatusBadge(client.status)} />
           </div>
-          <button
-            type="button"
-            className="drawer__close"
-            onClick={onClose}
-            aria-label="Close client details"
-          >
-            <IconX />
-          </button>
-        </header>
-
-        <div className="drawer__body">
-          <dl className="drawer-details">
-            <div className="drawer-details__row">
-              <dt className="drawer-details__label">Contact</dt>
-              <dd className="drawer-details__value">{client.contact}</dd>
-            </div>
-            <div className="drawer-details__row">
-              <dt className="drawer-details__label">Email</dt>
-              <dd className="drawer-details__value">
-                <a className="drawer-details__link" href={`mailto:${client.email}`}>
-                  {client.email}
-                </a>
-              </dd>
-            </div>
-            <div className="drawer-details__row">
-              <dt className="drawer-details__label">Status</dt>
-              <dd className="drawer-details__value">
-                <Badge {...client.status} />
-              </dd>
-            </div>
-            <div className="drawer-details__row">
-              <dt className="drawer-details__label">Project value</dt>
-              <dd className="drawer-details__value drawer-details__value--emphasis">
-                {formatCurrency(client.projectValue)}
-              </dd>
-            </div>
-            <div className="drawer-details__row">
-              <dt className="drawer-details__label">Last activity</dt>
-              <dd className="drawer-details__value drawer-details__value--muted">
-                {client.lastActivity}
-              </dd>
-            </div>
-          </dl>
-
-          <section className="drawer-activity" aria-label="Recent notes and activity">
-            <header className="drawer-activity__header">
-              <h3 className="drawer-activity__title">Recent notes &amp; activity</h3>
-              <span className="drawer-activity__meta">{activity.length} entries</span>
-            </header>
-            <ul className="drawer-activity__list">
-              {activity.map((item) => (
-                <li key={item.id} className="drawer-activity__item">
-                  <span className="drawer-activity__icon" aria-hidden="true">
-                    <ActivityIcon type={item.type} />
-                  </span>
-                  <div className="drawer-activity__copy">
-                    <span className="drawer-activity__item-title">{item.title}</span>
-                    <span className="drawer-activity__item-time">{item.time}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
+        </>
+      }
+    >
+      <dl className="drawer-details">
+        <div className="drawer-details__row">
+          <dt className="drawer-details__label">Contact</dt>
+          <dd className="drawer-details__value">{client.contact}</dd>
         </div>
+        <div className="drawer-details__row">
+          <dt className="drawer-details__label">Email</dt>
+          <dd className="drawer-details__value">
+            <a className="drawer-details__link" href={`mailto:${client.email}`}>
+              {client.email}
+            </a>
+          </dd>
+        </div>
+        <div className="drawer-details__row">
+          <dt className="drawer-details__label">Status</dt>
+          <dd className="drawer-details__value">
+            <Badge {...getClientStatusBadge(client.status)} />
+          </dd>
+        </div>
+        <div className="drawer-details__row">
+          <dt className="drawer-details__label">Project value</dt>
+          <dd className="drawer-details__value drawer-details__value--emphasis">
+            {formatCurrency(client.projectValue)}
+          </dd>
+        </div>
+        <div className="drawer-details__row">
+          <dt className="drawer-details__label">Last activity</dt>
+          <dd className="drawer-details__value drawer-details__value--muted">
+            {client.lastActivity}
+          </dd>
+        </div>
+      </dl>
 
-        <footer className="drawer__footer">
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => onEdit(client)}
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            className="btn btn--danger"
-            onClick={() => onDelete(client)}
-          >
-            Delete
-          </button>
-        </footer>
-      </aside>
-    </div>
+      <section className="drawer-activity" aria-label="Recent notes and activity">
+        <header className="drawer-activity__header">
+          <h3 className="drawer-activity__title">Recent notes &amp; activity</h3>
+          <span className="drawer-activity__meta">{activity.length} entries</span>
+        </header>
+        <ul className="drawer-activity__list">
+          {activity.map((item) => (
+            <li key={item.id} className="drawer-activity__item">
+              <span className="drawer-activity__icon" aria-hidden="true">
+                <ActivityIcon type={item.type} />
+              </span>
+              <div className="drawer-activity__copy">
+                <span className="drawer-activity__item-title">{item.title}</span>
+                <span className="drawer-activity__item-time">{item.time}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </Drawer>
   )
 }

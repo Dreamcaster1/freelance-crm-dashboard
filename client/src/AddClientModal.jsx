@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import useOverlayLock from './hooks/useOverlayLock'
-
-const STATUS_OPTIONS = [
-  { value: 'active', label: 'Active', variant: 'success' },
-  { value: 'lead', label: 'Lead', variant: 'info' },
-  { value: 'on-hold', label: 'On hold', variant: 'warning' },
-  { value: 'at-risk', label: 'At risk', variant: 'danger' },
-  { value: 'inactive', label: 'Inactive', variant: 'neutral' },
-]
+import {
+  ModalBody,
+  ModalField,
+  ModalFooter,
+  ModalForm,
+  ModalHeader,
+  ModalShell,
+} from './modals/modalPrimitives'
+import {
+  CLIENT_STATUS_OPTIONS,
+  getClientStatusBadge,
+  getClientStatusValue,
+} from './utils/badges'
 
 const EMPTY_FORM = {
   company: '',
@@ -18,25 +23,12 @@ const EMPTY_FORM = {
   lastActivity: '',
 }
 
-function getStatusBadge(statusValue) {
-  const option = STATUS_OPTIONS.find((item) => item.value === statusValue)
-  return {
-    label: option?.label ?? 'Active',
-    variant: option?.variant ?? 'success',
-  }
-}
-
-function getStatusValue(status) {
-  const option = STATUS_OPTIONS.find((item) => item.label === status.label)
-  return option?.value ?? 'active'
-}
-
 function clientToForm(client) {
   return {
     company: client.company,
     contact: client.contact,
     email: client.email,
-    status: getStatusValue(client.status),
+    status: getClientStatusValue(client.status),
     projectValue: client.projectValue ? String(client.projectValue) : '',
     lastActivity: client.lastActivity,
   }
@@ -113,140 +105,105 @@ function ClientModalContent({ client, onClose, onSave }) {
       company: form.company.trim(),
       contact: form.contact.trim(),
       email: form.email.trim(),
-      status: getStatusBadge(form.status),
+      status: getClientStatusBadge(form.status),
       projectValue,
       lastActivity: form.lastActivity.trim() || 'Just now',
     })
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="client-modal-title"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="modal__header">
-          <h2 id="client-modal-title" className="modal__title">
-            {isEditing ? 'Edit Client' : 'Add Client'}
-          </h2>
-          <p className="modal__description">
-            {isEditing
-              ? 'Update this client account and project details.'
-              : 'Add a new client account to your studio.'}
-          </p>
-        </header>
+    <ModalShell onClose={onClose} titleId="client-modal-title">
+      <ModalHeader
+        titleId="client-modal-title"
+        title={isEditing ? 'Edit Client' : 'Add Client'}
+        description={
+          isEditing
+            ? 'Update this client account and project details.'
+            : 'Add a new client account to your studio.'
+        }
+      />
 
-        <form className="modal__form" onSubmit={handleSubmit} noValidate>
-          <div className="modal__body">
-            <div className="modal-field">
-              <label className="modal-field__label" htmlFor="client-company">
-                Company name
-              </label>
-              <input
-                id="client-company"
-                type="text"
-                className={`field-input${errors.company ? ' field-input--error' : ''}`}
-                value={form.company}
-                onChange={(event) => updateField('company', event.target.value)}
-              />
-              {errors.company && (
-                <span className="field-error">{errors.company}</span>
-              )}
-            </div>
+      <ModalForm onSubmit={handleSubmit}>
+        <ModalBody>
+          <ModalField
+            label="Company name"
+            htmlFor="client-company"
+            error={errors.company}
+          >
+            <input
+              id="client-company"
+              type="text"
+              className={`field-input${errors.company ? ' field-input--error' : ''}`}
+              value={form.company}
+              onChange={(event) => updateField('company', event.target.value)}
+            />
+          </ModalField>
 
-            <div className="modal-field">
-              <label className="modal-field__label" htmlFor="client-contact">
-                Contact name
-              </label>
-              <input
-                id="client-contact"
-                type="text"
-                className={`field-input${errors.contact ? ' field-input--error' : ''}`}
-                value={form.contact}
-                onChange={(event) => updateField('contact', event.target.value)}
-              />
-              {errors.contact && (
-                <span className="field-error">{errors.contact}</span>
-              )}
-            </div>
+          <ModalField
+            label="Contact name"
+            htmlFor="client-contact"
+            error={errors.contact}
+          >
+            <input
+              id="client-contact"
+              type="text"
+              className={`field-input${errors.contact ? ' field-input--error' : ''}`}
+              value={form.contact}
+              onChange={(event) => updateField('contact', event.target.value)}
+            />
+          </ModalField>
 
-            <div className="modal-field">
-              <label className="modal-field__label" htmlFor="client-email">
-                Email
-              </label>
-              <input
-                id="client-email"
-                type="email"
-                className={`field-input${errors.email ? ' field-input--error' : ''}`}
-                value={form.email}
-                onChange={(event) => updateField('email', event.target.value)}
-              />
-              {errors.email && (
-                <span className="field-error">{errors.email}</span>
-              )}
-            </div>
+          <ModalField label="Email" htmlFor="client-email" error={errors.email}>
+            <input
+              id="client-email"
+              type="email"
+              className={`field-input${errors.email ? ' field-input--error' : ''}`}
+              value={form.email}
+              onChange={(event) => updateField('email', event.target.value)}
+            />
+          </ModalField>
 
-            <div className="modal-field">
-              <label className="modal-field__label" htmlFor="client-status">
-                Status
-              </label>
-              <select
-                id="client-status"
-                className="field-select"
-                value={form.status}
-                onChange={(event) => updateField('status', event.target.value)}
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <ModalField label="Status" htmlFor="client-status">
+            <select
+              id="client-status"
+              className="field-select"
+              value={form.status}
+              onChange={(event) => updateField('status', event.target.value)}
+            >
+              {CLIENT_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </ModalField>
 
-            <div className="modal-field">
-              <label className="modal-field__label" htmlFor="client-value">
-                Project value
-              </label>
-              <input
-                id="client-value"
-                type="text"
-                className="field-input"
-                placeholder="0"
-                inputMode="decimal"
-                value={form.projectValue}
-                onChange={(event) => updateField('projectValue', event.target.value)}
-              />
-            </div>
+          <ModalField label="Project value" htmlFor="client-value">
+            <input
+              id="client-value"
+              type="text"
+              className="field-input"
+              placeholder="0"
+              inputMode="decimal"
+              value={form.projectValue}
+              onChange={(event) => updateField('projectValue', event.target.value)}
+            />
+          </ModalField>
 
-            <div className="modal-field">
-              <label className="modal-field__label" htmlFor="client-activity">
-                Last activity
-              </label>
-              <input
-                id="client-activity"
-                type="text"
-                className="field-input"
-                placeholder="Just now"
-                value={form.lastActivity}
-                onChange={(event) => updateField('lastActivity', event.target.value)}
-              />
-            </div>
-          </div>
+          <ModalField label="Last activity" htmlFor="client-activity">
+            <input
+              id="client-activity"
+              type="text"
+              className="field-input"
+              placeholder="Just now"
+              value={form.lastActivity}
+              onChange={(event) => updateField('lastActivity', event.target.value)}
+            />
+          </ModalField>
+        </ModalBody>
 
-          <footer className="modal__footer">
-            <button type="button" className="btn btn--secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn--primary">
-              Save
-            </button>
-          </footer>
-        </form>
-      </div>
-    </div>
+        <ModalFooter onClose={onClose} />
+      </ModalForm>
+    </ModalShell>
   )
 }

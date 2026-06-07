@@ -1,10 +1,20 @@
 import { useMemo, useState } from 'react'
 import AddTaskModal from './AddTaskModal'
+import useConfirmDeleteState from './hooks/useConfirmDeleteState'
+import useEditModalState from './hooks/useEditModalState'
+import useSelectionState from './hooks/useSelectionState'
 import Badge from './Badge'
 import ConfirmModal from './ConfirmModal'
 import TaskDetailDrawer from './TaskDetailDrawer'
 import { INITIAL_TASKS } from './data/tasks'
 import { IconPlus } from './icons'
+import {
+  SelectableTableRow,
+  TableActions,
+  TableCard,
+  TableEmptyState,
+} from './tables/tablePrimitives'
+import { getTaskPriorityBadge, getTaskStatusBadge } from './utils/badges'
 
 const FILTERS = [
   { id: 'all', label: 'All' },
@@ -16,10 +26,24 @@ const FILTERS = [
 export default function Tasks() {
   const [tasks, setTasks] = useState(INITIAL_TASKS)
   const [activeFilter, setActiveFilter] = useState('all')
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingTask, setEditingTask] = useState(null)
-  const [deletingTask, setDeletingTask] = useState(null)
-  const [selectedTask, setSelectedTask] = useState(null)
+  const {
+    isOpen: isModalOpen,
+    editingItem: editingTask,
+    openAdd: openAddModal,
+    openEdit: openEditModal,
+    close: closeModal,
+  } = useEditModalState()
+  const {
+    deletingItem: deletingTask,
+    openDelete: openDeleteModal,
+    closeDelete: closeDeleteModal,
+  } = useConfirmDeleteState()
+  const {
+    selectedItem: selectedTask,
+    setSelectedItem: setSelectedTask,
+    openSelection: openDrawer,
+    closeSelection: closeDrawer,
+  } = useSelectionState()
 
   const filteredTasks = useMemo(() => {
     if (activeFilter === 'all') return tasks
@@ -35,21 +59,6 @@ export default function Tasks() {
     }
   }, [tasks])
 
-  function openAddModal() {
-    setEditingTask(null)
-    setIsModalOpen(true)
-  }
-
-  function openEditModal(task) {
-    setEditingTask(task)
-    setIsModalOpen(true)
-  }
-
-  function closeModal() {
-    setIsModalOpen(false)
-    setEditingTask(null)
-  }
-
   function handleSaveTask(task) {
     if (editingTask) {
       setTasks((current) =>
@@ -62,14 +71,6 @@ export default function Tasks() {
     closeModal()
   }
 
-  function openDeleteModal(task) {
-    setDeletingTask(task)
-  }
-
-  function closeDeleteModal() {
-    setDeletingTask(null)
-  }
-
   function confirmDeleteTask() {
     if (!deletingTask) return
 
@@ -78,14 +79,6 @@ export default function Tasks() {
       current?.id === deletingTask.id ? null : current,
     )
     closeDeleteModal()
-  }
-
-  function openDrawer(task) {
-    setSelectedTask(task)
-  }
-
-  function closeDrawer() {
-    setSelectedTask(null)
   }
 
   return (
@@ -115,101 +108,72 @@ export default function Tasks() {
         </button>
       </div>
 
-      <div className="tasks-table-card">
-        <div className="table-scroll">
-          <table className="tasks-table">
-            <thead>
-              <tr>
-                <th scope="col">Task</th>
-                <th scope="col">Client</th>
-                <th scope="col">Status</th>
-                <th scope="col">Priority</th>
-                <th scope="col" className="tasks-table__align-right">
-                  Due Date
-                </th>
-                <th scope="col" className="tasks-table__align-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTasks.length > 0 ? (
-                filteredTasks.map((task) => (
-                  <tr
-                    key={task.id}
-                    className={`tasks-table__row${
-                      selectedTask?.id === task.id ? ' tasks-table__row--selected' : ''
-                    }`}
-                    onClick={() => openDrawer(task)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        openDrawer(task)
-                      }
-                    }}
-                    tabIndex={0}
-                    aria-label={`View details for ${task.name}`}
-                  >
-                    <td>
-                      <div className="task-name">
-                        <span
-                          className={`task-name__check${task.status === 'completed' ? ' task-name__check--done' : ''}`}
-                          aria-hidden="true"
-                        />
-                        <span className="task-name__label">{task.name}</span>
-                      </div>
-                    </td>
-                    <td className="tasks-table__client">{task.client}</td>
-                    <td>
-                      <Badge {...task.statusBadge} />
-                    </td>
-                    <td>
-                      <Badge {...task.priority} />
-                    </td>
-                    <td className="tasks-table__align-right tasks-table__due">
-                      {task.dueDate}
-                    </td>
-                    <td className="tasks-table__align-right">
-                      <div className="table-actions">
-                        <button
-                          type="button"
-                          className="btn btn--secondary btn--sm"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            openEditModal(task)
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn--danger btn--sm"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            openDeleteModal(task)
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="tasks-table__empty">
-                    No tasks match this filter.
+      <TableCard
+        cardClassName="tasks-table-card"
+        footerClassName="tasks-table__footer"
+        footerText={`Showing ${filteredTasks.length} of ${tasks.length} tasks`}
+      >
+        <table className="tasks-table">
+          <thead>
+            <tr>
+              <th scope="col">Task</th>
+              <th scope="col">Client</th>
+              <th scope="col">Status</th>
+              <th scope="col">Priority</th>
+              <th scope="col" className="tasks-table__align-right">
+                Due Date
+              </th>
+              <th scope="col" className="tasks-table__align-right">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTasks.length > 0 ? (
+              filteredTasks.map((task) => (
+                <SelectableTableRow
+                  key={task.id}
+                  isSelected={selectedTask?.id === task.id}
+                  rowClassName="tasks-table__row"
+                  selectedClassName="tasks-table__row--selected"
+                  ariaLabel={`View details for ${task.name}`}
+                  onOpen={() => openDrawer(task)}
+                >
+                  <td>
+                    <div className="task-name">
+                      <span
+                        className={`task-name__check${task.status === 'completed' ? ' task-name__check--done' : ''}`}
+                        aria-hidden="true"
+                      />
+                      <span className="task-name__label">{task.name}</span>
+                    </div>
                   </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <footer className="tasks-table__footer">
-          Showing {filteredTasks.length} of {tasks.length} tasks
-        </footer>
-      </div>
+                  <td className="tasks-table__client">{task.client}</td>
+                  <td>
+                    <Badge {...getTaskStatusBadge(task.status)} />
+                  </td>
+                  <td>
+                    <Badge {...getTaskPriorityBadge(task.priority)} />
+                  </td>
+                  <td className="tasks-table__align-right tasks-table__due">
+                    {task.dueDate}
+                  </td>
+                  <td className="tasks-table__align-right">
+                    <TableActions
+                      onEdit={() => openEditModal(task)}
+                      onDelete={() => openDeleteModal(task)}
+                    />
+                  </td>
+                </SelectableTableRow>
+              ))
+            ) : (
+              <TableEmptyState colSpan={6} className="tasks-table__empty">
+                No tasks match this filter.
+              </TableEmptyState>
+            )}
+          </tbody>
+        </table>
+      </TableCard>
 
       <AddTaskModal
         isOpen={isModalOpen}

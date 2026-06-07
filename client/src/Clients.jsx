@@ -1,10 +1,20 @@
 import { useMemo, useState } from 'react'
 import AddClientModal from './AddClientModal'
+import useConfirmDeleteState from './hooks/useConfirmDeleteState'
+import useEditModalState from './hooks/useEditModalState'
+import useSelectionState from './hooks/useSelectionState'
 import Badge from './Badge'
 import ClientDetailDrawer from './ClientDetailDrawer'
 import ConfirmModal from './ConfirmModal'
 import { INITIAL_CLIENTS } from './data/clients'
 import { IconPlus, IconSearch } from './icons'
+import {
+  SelectableTableRow,
+  TableActions,
+  TableCard,
+  TableEmptyState,
+} from './tables/tablePrimitives'
+import { getClientStatusBadge } from './utils/badges'
 import { formatCurrency, getInitials } from './utils/format'
 
 function filterClients(clients, query) {
@@ -22,31 +32,30 @@ function filterClients(clients, query) {
 export default function Clients() {
   const [clients, setClients] = useState(INITIAL_CLIENTS)
   const [query, setQuery] = useState('')
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingClient, setEditingClient] = useState(null)
-  const [deletingClient, setDeletingClient] = useState(null)
-  const [selectedClient, setSelectedClient] = useState(null)
+  const {
+    isOpen: isModalOpen,
+    editingItem: editingClient,
+    openAdd: openAddModal,
+    openEdit: openEditModal,
+    close: closeModal,
+  } = useEditModalState()
+  const {
+    deletingItem: deletingClient,
+    openDelete: openDeleteModal,
+    closeDelete: closeDeleteModal,
+  } = useConfirmDeleteState()
+  const {
+    selectedItem: selectedClient,
+    setSelectedItem: setSelectedClient,
+    openSelection: openDrawer,
+    closeSelection: closeDrawer,
+  } = useSelectionState()
   const trimmedQuery = query.trim()
 
   const filteredClients = useMemo(
     () => filterClients(clients, query),
     [clients, query],
   )
-
-  function openAddModal() {
-    setEditingClient(null)
-    setIsModalOpen(true)
-  }
-
-  function openEditModal(client) {
-    setEditingClient(client)
-    setIsModalOpen(true)
-  }
-
-  function closeModal() {
-    setIsModalOpen(false)
-    setEditingClient(null)
-  }
 
   function handleSaveClient(client) {
     if (editingClient) {
@@ -62,14 +71,6 @@ export default function Clients() {
     closeModal()
   }
 
-  function openDeleteModal(client) {
-    setDeletingClient(client)
-  }
-
-  function closeDeleteModal() {
-    setDeletingClient(null)
-  }
-
   function confirmDeleteClient() {
     if (!deletingClient) return
 
@@ -80,14 +81,6 @@ export default function Clients() {
       current?.id === deletingClient.id ? null : current,
     )
     closeDeleteModal()
-  }
-
-  function openDrawer(client) {
-    setSelectedClient(client)
-  }
-
-  function closeDrawer() {
-    setSelectedClient(null)
   }
 
   return (
@@ -114,113 +107,82 @@ export default function Clients() {
         </button>
       </div>
 
-      <div className="clients-table-card">
-        <div className="table-scroll">
-          <table className="clients-table">
-            <thead>
-              <tr>
-                <th scope="col">Company</th>
-                <th scope="col">Contact</th>
-                <th scope="col">Status</th>
-                <th scope="col" className="clients-table__align-right">
-                  Project Value
-                </th>
-                <th scope="col" className="clients-table__align-right">
-                  Last Activity
-                </th>
-                <th scope="col" className="clients-table__align-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredClients.length > 0 ? (
-                filteredClients.map((client) => (
-                  <tr
-                    key={client.id}
-                    className={`clients-table__row${
-                      selectedClient?.id === client.id
-                        ? ' clients-table__row--selected'
-                        : ''
-                    }`}
-                    onClick={() => openDrawer(client)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        openDrawer(client)
-                      }
-                    }}
-                    tabIndex={0}
-                    aria-label={`View details for ${client.company}`}
-                  >
-                    <td>
-                      <div className="client-company">
-                        <span className="client-avatar" aria-hidden="true">
-                          {getInitials(client.company)}
-                        </span>
-                        <span className="client-company__name">{client.company}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="client-contact">
-                        <span className="client-contact__name">{client.contact}</span>
-                        <span className="client-contact__email">{client.email}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <Badge {...client.status} />
-                    </td>
-                    <td className="clients-table__align-right clients-table__value">
-                      {formatCurrency(client.projectValue)}
-                    </td>
-                    <td className="clients-table__align-right clients-table__muted">
-                      {client.lastActivity}
-                    </td>
-                    <td className="clients-table__align-right">
-                      <div className="table-actions">
-                        <button
-                          type="button"
-                          className="btn btn--secondary btn--sm"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            openEditModal(client)
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn--danger btn--sm"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            openDeleteModal(client)
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="clients-table__empty">
-                    <span className="clients-table__empty-title">No clients found</span>
-                    <span className="clients-table__empty-hint">
-                      No results for &ldquo;{trimmedQuery}&rdquo;. Try another
-                      company, contact, or email.
-                    </span>
+      <TableCard
+        cardClassName="clients-table-card"
+        footerClassName="clients-table__footer"
+        footerText={`Showing ${filteredClients.length} of ${clients.length} clients`}
+      >
+        <table className="clients-table">
+          <thead>
+            <tr>
+              <th scope="col">Company</th>
+              <th scope="col">Contact</th>
+              <th scope="col">Status</th>
+              <th scope="col" className="clients-table__align-right">
+                Project Value
+              </th>
+              <th scope="col" className="clients-table__align-right">
+                Last Activity
+              </th>
+              <th scope="col" className="clients-table__align-right">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredClients.length > 0 ? (
+              filteredClients.map((client) => (
+                <SelectableTableRow
+                  key={client.id}
+                  isSelected={selectedClient?.id === client.id}
+                  rowClassName="clients-table__row"
+                  selectedClassName="clients-table__row--selected"
+                  ariaLabel={`View details for ${client.company}`}
+                  onOpen={() => openDrawer(client)}
+                >
+                  <td>
+                    <div className="client-company">
+                      <span className="client-avatar" aria-hidden="true">
+                        {getInitials(client.company)}
+                      </span>
+                      <span className="client-company__name">{client.company}</span>
+                    </div>
                   </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <footer className="clients-table__footer">
-          Showing {filteredClients.length} of {clients.length} clients
-        </footer>
-      </div>
+                  <td>
+                    <div className="client-contact">
+                      <span className="client-contact__name">{client.contact}</span>
+                      <span className="client-contact__email">{client.email}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <Badge {...getClientStatusBadge(client.status)} />
+                  </td>
+                  <td className="clients-table__align-right clients-table__value">
+                    {formatCurrency(client.projectValue)}
+                  </td>
+                  <td className="clients-table__align-right clients-table__muted">
+                    {client.lastActivity}
+                  </td>
+                  <td className="clients-table__align-right">
+                    <TableActions
+                      onEdit={() => openEditModal(client)}
+                      onDelete={() => openDeleteModal(client)}
+                    />
+                  </td>
+                </SelectableTableRow>
+              ))
+            ) : (
+              <TableEmptyState colSpan={6} className="clients-table__empty">
+                <span className="clients-table__empty-title">No clients found</span>
+                <span className="clients-table__empty-hint">
+                  No results for &ldquo;{trimmedQuery}&rdquo;. Try another
+                  company, contact, or email.
+                </span>
+              </TableEmptyState>
+            )}
+          </tbody>
+        </table>
+      </TableCard>
 
       <AddClientModal
         isOpen={isModalOpen}

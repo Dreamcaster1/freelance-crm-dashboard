@@ -1,11 +1,13 @@
+import { getTaskPriorityBadge, getTaskStatusBadge } from '../utils/badges'
+
 export const INITIAL_TASKS = [
   {
     id: 't1',
     name: 'Ship homepage v2 to staging',
     client: 'Relay Apps',
     status: 'in-progress',
-    statusBadge: { label: 'In Progress', variant: 'info' },
-    priority: { label: 'High', variant: 'danger' },
+    statusBadge: getTaskStatusBadge('in-progress'),
+    priority: getTaskPriorityBadge('high'),
     dueDate: 'Jun 7, 2026',
   },
   {
@@ -13,8 +15,8 @@ export const INITIAL_TASKS = [
     name: 'Send sprint recap and loom walkthrough',
     client: 'Patchwork Foods',
     status: 'pending',
-    statusBadge: { label: 'Pending', variant: 'neutral' },
-    priority: { label: 'Medium', variant: 'warning' },
+    statusBadge: getTaskStatusBadge('pending'),
+    priority: getTaskPriorityBadge('medium'),
     dueDate: 'Jun 8, 2026',
   },
   {
@@ -22,8 +24,8 @@ export const INITIAL_TASKS = [
     name: 'Review revised scope for Phase 2',
     client: 'Harbor & Co.',
     status: 'in-progress',
-    statusBadge: { label: 'In Progress', variant: 'info' },
-    priority: { label: 'Medium', variant: 'warning' },
+    statusBadge: getTaskStatusBadge('in-progress'),
+    priority: getTaskPriorityBadge('medium'),
     dueDate: 'Jun 9, 2026',
   },
   {
@@ -31,8 +33,8 @@ export const INITIAL_TASKS = [
     name: 'Export production assets for launch',
     client: 'Vaultline Security',
     status: 'pending',
-    statusBadge: { label: 'Pending', variant: 'neutral' },
-    priority: { label: 'Low', variant: 'neutral' },
+    statusBadge: getTaskStatusBadge('pending'),
+    priority: getTaskPriorityBadge('low'),
     dueDate: 'Jun 10, 2026',
   },
   {
@@ -40,8 +42,8 @@ export const INITIAL_TASKS = [
     name: 'Book content walkthrough with marketing',
     client: 'Kite & Anchor',
     status: 'pending',
-    statusBadge: { label: 'Pending', variant: 'neutral' },
-    priority: { label: 'Low', variant: 'neutral' },
+    statusBadge: getTaskStatusBadge('pending'),
+    priority: getTaskPriorityBadge('low'),
     dueDate: 'Jun 12, 2026',
   },
   {
@@ -49,8 +51,8 @@ export const INITIAL_TASKS = [
     name: 'Build shared component library',
     client: 'Relay Apps',
     status: 'in-progress',
-    statusBadge: { label: 'In Progress', variant: 'info' },
-    priority: { label: 'High', variant: 'danger' },
+    statusBadge: getTaskStatusBadge('in-progress'),
+    priority: getTaskPriorityBadge('high'),
     dueDate: 'Jun 14, 2026',
   },
   {
@@ -58,8 +60,8 @@ export const INITIAL_TASKS = [
     name: 'Draft proposal for analytics dashboard',
     client: 'Lumen Analytics',
     status: 'in-progress',
-    statusBadge: { label: 'In Progress', variant: 'info' },
-    priority: { label: 'Medium', variant: 'warning' },
+    statusBadge: getTaskStatusBadge('in-progress'),
+    priority: getTaskPriorityBadge('medium'),
     dueDate: 'Jun 15, 2026',
   },
   {
@@ -67,8 +69,8 @@ export const INITIAL_TASKS = [
     name: 'Scope one-page pitch site',
     client: 'Atlas Ventures',
     status: 'pending',
-    statusBadge: { label: 'Pending', variant: 'neutral' },
-    priority: { label: 'Low', variant: 'neutral' },
+    statusBadge: getTaskStatusBadge('pending'),
+    priority: getTaskPriorityBadge('low'),
     dueDate: 'Jun 18, 2026',
   },
   {
@@ -76,8 +78,8 @@ export const INITIAL_TASKS = [
     name: 'Homepage responsive QA passed',
     client: 'Patchwork Foods',
     status: 'completed',
-    statusBadge: { label: 'Completed', variant: 'success' },
-    priority: { label: 'High', variant: 'danger' },
+    statusBadge: getTaskStatusBadge('completed'),
+    priority: getTaskPriorityBadge('high'),
     dueDate: 'Jun 5, 2026',
   },
   {
@@ -85,8 +87,8 @@ export const INITIAL_TASKS = [
     name: 'Invoice #1042 sent for May retainer',
     client: 'Relay Apps',
     status: 'completed',
-    statusBadge: { label: 'Completed', variant: 'success' },
-    priority: { label: 'Medium', variant: 'warning' },
+    statusBadge: getTaskStatusBadge('completed'),
+    priority: getTaskPriorityBadge('medium'),
     dueDate: 'Jun 4, 2026',
   },
   {
@@ -94,8 +96,8 @@ export const INITIAL_TASKS = [
     name: 'Confirm June retainer payment',
     client: 'Kite & Anchor',
     status: 'completed',
-    statusBadge: { label: 'Completed', variant: 'success' },
-    priority: { label: 'Low', variant: 'neutral' },
+    statusBadge: getTaskStatusBadge('completed'),
+    priority: getTaskPriorityBadge('low'),
     dueDate: 'Jun 2, 2026',
   },
   {
@@ -103,8 +105,8 @@ export const INITIAL_TASKS = [
     name: 'Hand off design tokens to dev',
     client: 'Vaultline Security',
     status: 'completed',
-    statusBadge: { label: 'Completed', variant: 'success' },
-    priority: { label: 'Medium', variant: 'warning' },
+    statusBadge: getTaskStatusBadge('completed'),
+    priority: getTaskPriorityBadge('medium'),
     dueDate: 'May 28, 2026',
   },
   {
@@ -112,8 +114,8 @@ export const INITIAL_TASKS = [
     name: 'Reconcile May contractor payouts',
     client: 'Clearline Studio',
     status: 'completed',
-    statusBadge: { label: 'Completed', variant: 'success' },
-    priority: { label: 'Low', variant: 'neutral' },
+    statusBadge: getTaskStatusBadge('completed'),
+    priority: getTaskPriorityBadge('low'),
     dueDate: 'May 31, 2026',
   },
   {
@@ -121,8 +123,8 @@ export const INITIAL_TASKS = [
     name: 'Wire store locator map integration',
     client: 'Fieldstone Retail',
     status: 'in-progress',
-    statusBadge: { label: 'In Progress', variant: 'info' },
-    priority: { label: 'Medium', variant: 'warning' },
+    statusBadge: getTaskStatusBadge('in-progress'),
+    priority: getTaskPriorityBadge('medium'),
     dueDate: 'Jun 20, 2026',
   },
 ]
