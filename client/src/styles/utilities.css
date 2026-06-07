@@ -34,14 +34,6 @@
     grid-template-columns: 1fr;
   }
 
-  .card-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .header {
     padding: 0 24px;
   }
@@ -215,8 +207,7 @@
     gap: 20px;
   }
 
-  .dashboard-stats,
-  .stats {
+  .dashboard-stats {
     grid-template-columns: 1fr;
   }
 
@@ -326,8 +317,7 @@
     font-size: 12px;
   }
 
-  .dashboard-stat,
-  .stat-card {
+  .dashboard-stat {
     padding: 16px 18px;
   }
 

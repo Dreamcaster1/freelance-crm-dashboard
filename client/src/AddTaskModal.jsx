@@ -8,13 +8,7 @@ import {
   ModalHeader,
   ModalShell,
 } from './modals/modalPrimitives'
-import {
-  TASK_PRIORITY_OPTIONS,
-  TASK_STATUS_OPTIONS,
-  getTaskPriorityBadge,
-  getTaskPriorityValue,
-  getTaskStatusBadge,
-} from './utils/badges'
+import { TASK_PRIORITY_OPTIONS, TASK_STATUS_OPTIONS } from './utils/badges'
 import { formatDueDate, parseDueDateToInput } from './utils/format'
 
 const EMPTY_FORM = {
@@ -30,7 +24,7 @@ function taskToForm(task) {
     name: task.name,
     client: task.client,
     status: task.status,
-    priority: getTaskPriorityValue(task.priority),
+    priority: task.priority,
     dueDate: parseDueDateToInput(task.dueDate),
   }
 }
@@ -94,8 +88,7 @@ function TaskModalContent({ task, onClose, onSave }) {
       name: form.name.trim(),
       client: form.client.trim(),
       status: form.status,
-      statusBadge: getTaskStatusBadge(form.status),
-      priority: getTaskPriorityBadge(form.priority),
+      priority: form.priority,
       dueDate: formatDueDate(form.dueDate),
     })
   }
