@@ -8,11 +8,7 @@ import {
   ModalHeader,
   ModalShell,
 } from './modals/modalPrimitives'
-import {
-  CLIENT_STATUS_OPTIONS,
-  getClientStatusBadge,
-  getClientStatusValue,
-} from './utils/badges'
+import { CLIENT_STATUS_OPTIONS } from './utils/badges'
 
 const EMPTY_FORM = {
   company: '',
@@ -28,7 +24,7 @@ function clientToForm(client) {
     company: client.company,
     contact: client.contact,
     email: client.email,
-    status: getClientStatusValue(client.status),
+    status: client.status,
     projectValue: client.projectValue ? String(client.projectValue) : '',
     lastActivity: client.lastActivity,
   }
@@ -105,7 +101,7 @@ function ClientModalContent({ client, onClose, onSave }) {
       company: form.company.trim(),
       contact: form.contact.trim(),
       email: form.email.trim(),
-      status: getClientStatusBadge(form.status),
+      status: form.status,
       projectValue,
       lastActivity: form.lastActivity.trim() || 'Just now',
     })
