@@ -1,9 +1,8 @@
 import cors from 'cors'
-import dotenv from 'dotenv'
 import express from 'express'
+import sessionMiddleware from './config/session.js'
+import authRoutes from './routes/authRoutes.js'
 import healthRoutes from './routes/healthRoutes.js'
-
-dotenv.config()
 
 const app = express()
 
@@ -14,7 +13,9 @@ app.use(
   }),
 )
 app.use(express.json())
+app.use(sessionMiddleware)
 
 app.use('/api/health', healthRoutes)
+app.use('/api/auth', authRoutes)
 
 export default app
