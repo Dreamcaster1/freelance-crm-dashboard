@@ -2,6 +2,7 @@ import cors from 'cors'
 import express from 'express'
 import sessionMiddleware from './config/session.js'
 import authRoutes from './routes/authRoutes.js'
+import clientRoutes from './routes/clientRoutes.js'
 import healthRoutes from './routes/healthRoutes.js'
 
 const app = express()
@@ -17,5 +18,6 @@ app.use(sessionMiddleware)
 
 app.use('/api/health', healthRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api/clients', clientRoutes)
 
 export default app
