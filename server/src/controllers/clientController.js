@@ -5,6 +5,10 @@ import {
   findClientsByWorkspace,
   updateClient,
 } from '../models/clientModel.js'
+import {
+  mapClientResponse,
+  mapClientResponses,
+} from '../utils/clientMapper.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const VALID_STATUSES = ['active', 'lead', 'on-hold', 'at-risk', 'inactive']
@@ -211,7 +215,7 @@ export async function listClients(req, res) {
 
   return res.json({
     ok: true,
-    clients,
+    clients: mapClientResponses(clients),
   })
 }
 
@@ -231,7 +235,7 @@ export async function getClient(req, res) {
 
   return res.json({
     ok: true,
-    client,
+    client: mapClientResponse(client),
   })
 }
 
@@ -247,7 +251,7 @@ export async function createClientHandler(req, res) {
 
   return res.status(201).json({
     ok: true,
-    client,
+    client: mapClientResponse(client),
   })
 }
 
@@ -279,7 +283,7 @@ export async function updateClientHandler(req, res) {
 
   return res.json({
     ok: true,
-    client,
+    client: mapClientResponse(client),
   })
 }
 

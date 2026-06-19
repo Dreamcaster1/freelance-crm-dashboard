@@ -6,6 +6,7 @@ import {
   findTasksByWorkspace,
   updateTask,
 } from '../models/taskModel.js'
+import { mapTaskResponse, mapTaskResponses } from '../utils/taskMapper.js'
 
 const VALID_STATUSES = ['in-progress', 'pending', 'completed']
 const VALID_PRIORITIES = ['high', 'medium', 'low']
@@ -252,7 +253,7 @@ export async function listTasks(req, res) {
 
   return res.json({
     ok: true,
-    tasks,
+    tasks: mapTaskResponses(tasks),
   })
 }
 
@@ -272,7 +273,7 @@ export async function getTask(req, res) {
 
   return res.json({
     ok: true,
-    task,
+    task: mapTaskResponse(task),
   })
 }
 
@@ -307,7 +308,7 @@ export async function createTaskHandler(req, res) {
 
   return res.status(201).json({
     ok: true,
-    task,
+    task: mapTaskResponse(task),
   })
 }
 
@@ -357,7 +358,7 @@ export async function updateTaskHandler(req, res) {
 
   return res.json({
     ok: true,
-    task,
+    task: mapTaskResponse(task),
   })
 }
 
