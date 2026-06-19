@@ -29,19 +29,61 @@ export function validateCalendarDate(value, fieldName = 'due_date') {
   return null
 }
 
+const ISO_TIMESTAMP_PATTERN =
+  /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{1,3})?(Z|[+-]\d{2}:\d{2})?)?$/
+
 export function validateDateTimeOrNull(value, fieldName = 'last_activity_at') {
   if (value === null) {
     return null
   }
 
-  if (typeof value !== 'string' && typeof value !== 'number') {
-    return `${fieldName} must be a valid date or null.`
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      return `${fieldName} must be a valid ISO timestamp or null.`
+    }
+
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) {
+      return `${fieldName} must be a valid ISO timestamp or null.`
+    }
+
+    return null
   }
 
-  const parsed = new Date(value)
+  if (typeof value !== 'string') {
+    return `${fieldName} must be a valid ISO timestamp or null.`
+  }
+
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return `${fieldName} must be a valid ISO timestamp or null.`
+  }
+
+  if (!ISO_TIMESTAMP_PATTERN.test(trimmed)) {
+    return `${fieldName} must be a valid ISO timestamp or null.`
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return validateCalendarDate(trimmed, fieldName)
+  }
+
+  const parsed = new Date(trimmed)
   if (Number.isNaN(parsed.getTime())) {
-    return `${fieldName} must be a valid date or null.`
+    return `${fieldName} must be a valid ISO timestamp or null.`
   }
 
   return null
+}
+
+export function parseDateTimeOrNull(value, fieldName = 'last_activity_at') {
+  const error = validateDateTimeOrNull(value, fieldName)
+  if (error) {
+    return { error }
+  }
+
+  if (value === null) {
+    return { value: null }
+  }
+
+  return { value: new Date(value) }
 }

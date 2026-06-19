@@ -1,3 +1,16 @@
+function formatIsoDateTimeOrNull(value) {
+  if (value == null) {
+    return null
+  }
+
+  const parsed = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return null
+  }
+
+  return parsed.toISOString()
+}
+
 export function mapClientResponse(client) {
   return {
     id: client.id,
@@ -7,7 +20,7 @@ export function mapClientResponse(client) {
     email: client.email,
     status: client.status,
     projectValueCents: client.project_value_cents,
-    lastActivityAt: client.last_activity_at,
+    lastActivityAt: formatIsoDateTimeOrNull(client.last_activity_at),
     createdAt: client.created_at,
     updatedAt: client.updated_at,
   }

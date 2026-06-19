@@ -11,7 +11,7 @@ import {
 } from '../utils/clientMapper.js'
 import {
   assertJsonObject,
-  validateDateTimeOrNull,
+  parseDateTimeOrNull,
 } from '../utils/validation.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -98,11 +98,11 @@ function validateCreateBody(body) {
     if (body.last_activity_at === null) {
       lastActivityAt = null
     } else {
-      const dateError = validateDateTimeOrNull(body.last_activity_at)
-      if (dateError) {
-        return { error: dateError }
+      const parsed = parseDateTimeOrNull(body.last_activity_at)
+      if (parsed.error) {
+        return { error: parsed.error }
       }
-      lastActivityAt = new Date(body.last_activity_at)
+      lastActivityAt = parsed.value
     }
   }
 
@@ -197,11 +197,11 @@ function validatePatchBody(body) {
     if (body.last_activity_at === null) {
       fields.lastActivityAt = null
     } else {
-      const dateError = validateDateTimeOrNull(body.last_activity_at)
-      if (dateError) {
-        return { error: dateError }
+      const parsed = parseDateTimeOrNull(body.last_activity_at)
+      if (parsed.error) {
+        return { error: parsed.error }
       }
-      fields.lastActivityAt = new Date(body.last_activity_at)
+      fields.lastActivityAt = parsed.value
     }
   }
 
