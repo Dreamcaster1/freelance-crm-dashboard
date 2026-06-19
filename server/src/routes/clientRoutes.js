@@ -1,15 +1,16 @@
 import { Router } from 'express'
 import * as clientController from '../controllers/clientController.js'
+import { asyncHandler } from '../middleware/asyncHandler.js'
 import { requireAuth } from '../middleware/authMiddleware.js'
 
 const router = Router()
 
 router.use(requireAuth)
 
-router.get('/', clientController.listClients)
-router.post('/', clientController.createClientHandler)
-router.get('/:id', clientController.getClient)
-router.patch('/:id', clientController.updateClientHandler)
-router.delete('/:id', clientController.deleteClientHandler)
+router.get('/', asyncHandler(clientController.listClients))
+router.post('/', asyncHandler(clientController.createClientHandler))
+router.get('/:id', asyncHandler(clientController.getClient))
+router.patch('/:id', asyncHandler(clientController.updateClientHandler))
+router.delete('/:id', asyncHandler(clientController.deleteClientHandler))
 
 export default router
