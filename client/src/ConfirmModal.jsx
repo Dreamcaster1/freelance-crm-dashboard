@@ -5,6 +5,8 @@ export default function ConfirmModal({
   title,
   description,
   confirmLabel = 'Delete',
+  error = null,
+  isConfirming = false,
   onClose,
   onConfirm,
 }) {
@@ -29,14 +31,25 @@ export default function ConfirmModal({
           <p id="confirm-modal-description" className="modal__description">
             {description}
           </p>
+          {error ? <p className="field-error">{error}</p> : null}
         </header>
 
         <footer className="modal__footer">
-          <button type="button" className="btn btn--secondary" onClick={onClose}>
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={onClose}
+            disabled={isConfirming}
+          >
             Cancel
           </button>
-          <button type="button" className="btn btn--destructive" onClick={onConfirm}>
-            {confirmLabel}
+          <button
+            type="button"
+            className="btn btn--destructive"
+            onClick={onConfirm}
+            disabled={isConfirming}
+          >
+            {isConfirming ? 'Deleting…' : confirmLabel}
           </button>
         </footer>
       </div>

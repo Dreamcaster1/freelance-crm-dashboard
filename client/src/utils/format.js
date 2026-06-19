@@ -16,6 +16,36 @@ export function formatCurrency(amount) {
   }).format(amount)
 }
 
+export function formatRelativeActivity(isoString) {
+  if (!isoString) return '—'
+
+  const date = new Date(isoString)
+  if (Number.isNaN(date.getTime())) return '—'
+
+  const now = Date.now()
+  const diffMs = now - date.getTime()
+
+  if (diffMs < 0) {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  const diffMinutes = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMinutes / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffMinutes < 1) return 'Just now'
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`
+  }
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`
+  }
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return `${diffDays} days ago`
+
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 export function formatDueDate(dateValue) {
   if (!dateValue) return '—'
 

@@ -12,6 +12,7 @@ import {
 import {
   assertJsonObject,
   parseDateTimeOrNull,
+  parseProjectValueCents,
 } from '../utils/validation.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -31,14 +32,6 @@ function validateStatus(status) {
   }
   return null
 }
-
-function validateProjectValueCents(value) {
-  if (!Number.isInteger(value) || value < 0) {
-    return 'project_value_cents must be a non-negative integer.'
-  }
-  return null
-}
-
 
 function validateCreateBody(body) {
   const bodyError = assertJsonObject(body)
@@ -86,11 +79,11 @@ function validateCreateBody(body) {
 
   let projectValueCents = 0
   if (body.project_value_cents !== undefined) {
-    projectValueCents = Number(body.project_value_cents)
-    const valueError = validateProjectValueCents(projectValueCents)
-    if (valueError) {
-      return { error: valueError }
+    const parsed = parseProjectValueCents(body.project_value_cents)
+    if (parsed.error) {
+      return { error: parsed.error }
     }
+    projectValueCents = parsed.value
   }
 
   let lastActivityAt = new Date()
@@ -185,12 +178,11 @@ function validatePatchBody(body) {
   }
 
   if (body.project_value_cents !== undefined) {
-    const projectValueCents = Number(body.project_value_cents)
-    const valueError = validateProjectValueCents(projectValueCents)
-    if (valueError) {
-      return { error: valueError }
+    const parsed = parseProjectValueCents(body.project_value_cents)
+    if (parsed.error) {
+      return { error: parsed.error }
     }
-    fields.projectValueCents = projectValueCents
+    fields.projectValueCents = parsed.value
   }
 
   if (body.last_activity_at !== undefined) {

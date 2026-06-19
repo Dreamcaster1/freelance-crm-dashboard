@@ -8,6 +8,7 @@ import {
   ModalHeader,
   ModalShell,
 } from './modals/modalPrimitives'
+import { mapClientToForm, validateProjectValueDollars } from './utils/clientMapper'
 import { CLIENT_STATUS_OPTIONS } from './utils/badges'
 
 const EMPTY_FORM = {
@@ -16,18 +17,6 @@ const EMPTY_FORM = {
   email: '',
   status: 'active',
   projectValue: '',
-  lastActivity: '',
-}
-
-function clientToForm(client) {
-  return {
-    company: client.company,
-    contact: client.contact,
-    email: client.email,
-    status: client.status,
-    projectValue: client.projectValue ? String(client.projectValue) : '',
-    lastActivity: client.lastActivity,
-  }
 }
 
 function validateForm(form) {
@@ -47,10 +36,22 @@ function validateForm(form) {
     errors.email = 'Enter a valid email address.'
   }
 
+  const projectValueError = validateProjectValueDollars(form.projectValue)
+  if (projectValueError) {
+    errors.projectValue = projectValueError
+  }
+
   return errors
 }
 
-export default function AddClientModal({ isOpen, client, onClose, onSave }) {
+export default function AddClientModal({
+  isOpen,
+  client,
+  onClose,
+  onSave,
+  isSaving = false,
+  saveError = null,
+}) {
   useOverlayLock(isOpen)
 
   if (!isOpen) return null
@@ -61,13 +62,21 @@ export default function AddClientModal({ isOpen, client, onClose, onSave }) {
       client={client}
       onClose={onClose}
       onSave={onSave}
+      isSaving={isSaving}
+      saveError={saveError}
     />
   )
 }
 
-function ClientModalContent({ client, onClose, onSave }) {
+function ClientModalContent({
+  client,
+  onClose,
+  onSave,
+  isSaving,
+  saveError,
+}) {
   const [form, setForm] = useState(() =>
-    client ? clientToForm(client) : EMPTY_FORM,
+    client ? mapClientToForm(client) : EMPTY_FORM,
   )
   const [errors, setErrors] = useState({})
   const isEditing = Boolean(client)
@@ -83,7 +92,7 @@ function ClientModalContent({ client, onClose, onSave }) {
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
     const validationErrors = validateForm(form)
@@ -92,19 +101,7 @@ function ClientModalContent({ client, onClose, onSave }) {
       return
     }
 
-    const projectValue = form.projectValue.trim()
-      ? Number(form.projectValue.replace(/[^0-9.]/g, '')) || 0
-      : 0
-
-    onSave({
-      id: client?.id ?? `c${Date.now()}`,
-      company: form.company.trim(),
-      contact: form.contact.trim(),
-      email: form.email.trim(),
-      status: form.status,
-      projectValue,
-      lastActivity: form.lastActivity.trim() || 'Just now',
-    })
+    await onSave(form)
   }
 
   return (
@@ -132,6 +129,7 @@ function ClientModalContent({ client, onClose, onSave }) {
               className={`field-input${errors.company ? ' field-input--error' : ''}`}
               value={form.company}
               onChange={(event) => updateField('company', event.target.value)}
+              disabled={isSaving}
             />
           </ModalField>
 
@@ -146,6 +144,7 @@ function ClientModalContent({ client, onClose, onSave }) {
               className={`field-input${errors.contact ? ' field-input--error' : ''}`}
               value={form.contact}
               onChange={(event) => updateField('contact', event.target.value)}
+              disabled={isSaving}
             />
           </ModalField>
 
@@ -156,6 +155,7 @@ function ClientModalContent({ client, onClose, onSave }) {
               className={`field-input${errors.email ? ' field-input--error' : ''}`}
               value={form.email}
               onChange={(event) => updateField('email', event.target.value)}
+              disabled={isSaving}
             />
           </ModalField>
 
@@ -165,6 +165,7 @@ function ClientModalContent({ client, onClose, onSave }) {
               className="field-select"
               value={form.status}
               onChange={(event) => updateField('status', event.target.value)}
+              disabled={isSaving}
             >
               {CLIENT_STATUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -174,31 +175,31 @@ function ClientModalContent({ client, onClose, onSave }) {
             </select>
           </ModalField>
 
-          <ModalField label="Project value" htmlFor="client-value">
+          <ModalField
+            label="Project value"
+            htmlFor="client-value"
+            error={errors.projectValue}
+          >
             <input
               id="client-value"
               type="text"
-              className="field-input"
+              className={`field-input${errors.projectValue ? ' field-input--error' : ''}`}
               placeholder="0"
               inputMode="decimal"
               value={form.projectValue}
               onChange={(event) => updateField('projectValue', event.target.value)}
+              disabled={isSaving}
             />
           </ModalField>
 
-          <ModalField label="Last activity" htmlFor="client-activity">
-            <input
-              id="client-activity"
-              type="text"
-              className="field-input"
-              placeholder="Just now"
-              value={form.lastActivity}
-              onChange={(event) => updateField('lastActivity', event.target.value)}
-            />
-          </ModalField>
+          {saveError ? <p className="field-error">{saveError}</p> : null}
         </ModalBody>
 
-        <ModalFooter onClose={onClose} />
+        <ModalFooter
+          onClose={onClose}
+          isSubmitting={isSaving}
+          submitLabel={isEditing ? 'Save changes' : 'Add client'}
+        />
       </ModalForm>
     </ModalShell>
   )

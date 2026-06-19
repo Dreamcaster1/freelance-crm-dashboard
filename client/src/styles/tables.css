@@ -6,6 +6,23 @@
   gap: 16px;
 }
 
+.clients-state {
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  text-align: center;
+}
+
+.clients-state__message {
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.clients-state__message--error {
+  color: var(--danger);
+}
+
 .clients-toolbar {
   display: flex;
   align-items: center;

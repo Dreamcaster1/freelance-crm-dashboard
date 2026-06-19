@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import AddClientModal from './AddClientModal'
+import * as clientsApi from './api/clients.js'
+import { ApiError } from './api/client.js'
 import useConfirmDeleteState from './hooks/useConfirmDeleteState'
 import useEditModalState from './hooks/useEditModalState'
 import useSelectionState from './hooks/useSelectionState'
 import Badge from './Badge'
 import ClientDetailDrawer from './ClientDetailDrawer'
 import ConfirmModal from './ConfirmModal'
-import { INITIAL_CLIENTS } from './data/clients'
 import { IconPlus, IconSearch } from './icons'
 import {
   SelectableTableRow,
@@ -14,6 +15,11 @@ import {
   TableCard,
   TableEmptyState,
 } from './tables/tablePrimitives'
+import {
+  mapClientFormToApiPayload,
+  mapClientFromApi,
+  mapClientsFromApi,
+} from './utils/clientMapper'
 import { getClientStatusBadge } from './utils/badges'
 import { formatCurrency, getInitials } from './utils/format'
 
@@ -30,8 +36,14 @@ function filterClients(clients, query) {
 }
 
 export default function Clients() {
-  const [clients, setClients] = useState(INITIAL_CLIENTS)
+  const [clients, setClients] = useState([])
+  const [loadStatus, setLoadStatus] = useState('loading')
+  const [loadError, setLoadError] = useState(null)
   const [query, setQuery] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
   const {
     isOpen: isModalOpen,
     editingItem: editingClient,
@@ -52,35 +64,133 @@ export default function Clients() {
   } = useSelectionState()
   const trimmedQuery = query.trim()
 
+  const fetchClients = useCallback(async () => {
+    setLoadStatus('loading')
+    setLoadError(null)
+
+    try {
+      const data = await clientsApi.listClients()
+      setClients(mapClientsFromApi(data.clients))
+      setLoadStatus('ready')
+    } catch (err) {
+      setClients([])
+      setLoadStatus('error')
+      setLoadError(
+        err instanceof ApiError
+          ? err.message
+          : 'Unable to load clients. Try again.',
+      )
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchClients()
+  }, [fetchClients])
+
   const filteredClients = useMemo(
     () => filterClients(clients, query),
     [clients, query],
   )
 
-  function handleSaveClient(client) {
-    if (editingClient) {
-      setClients((current) =>
-        current.map((item) => (item.id === client.id ? client : item)),
-      )
-      setSelectedClient((current) =>
-        current?.id === client.id ? client : current,
-      )
-    } else {
-      setClients((current) => [client, ...current])
-    }
-    closeModal()
+  function handleOpenAddModal() {
+    setSaveError(null)
+    openAddModal()
   }
 
-  function confirmDeleteClient() {
+  function handleOpenEditModal(client) {
+    setSaveError(null)
+    openEditModal(client)
+  }
+
+  async function handleSaveClient(form) {
+    setIsSaving(true)
+    setSaveError(null)
+
+    const payload = mapClientFormToApiPayload(form)
+
+    try {
+      if (editingClient) {
+        const data = await clientsApi.updateClient(editingClient.id, payload)
+        const savedClient = mapClientFromApi(data.client)
+
+        setClients((current) =>
+          current.map((item) =>
+            item.id === savedClient.id ? savedClient : item,
+          ),
+        )
+        setSelectedClient((current) =>
+          current?.id === savedClient.id ? savedClient : current,
+        )
+      } else {
+        const data = await clientsApi.createClient(payload)
+        const savedClient = mapClientFromApi(data.client)
+        setClients((current) => [savedClient, ...current])
+      }
+
+      closeModal()
+    } catch (err) {
+      setSaveError(
+        err instanceof ApiError
+          ? err.message
+          : 'Unable to save client. Try again.',
+      )
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function confirmDeleteClient() {
     if (!deletingClient) return
 
-    setClients((current) =>
-      current.filter((item) => item.id !== deletingClient.id),
-    )
-    setSelectedClient((current) =>
-      current?.id === deletingClient.id ? null : current,
-    )
+    setIsDeleting(true)
+    setDeleteError(null)
+
+    try {
+      await clientsApi.deleteClient(deletingClient.id)
+
+      setClients((current) =>
+        current.filter((item) => item.id !== deletingClient.id),
+      )
+      setSelectedClient((current) =>
+        current?.id === deletingClient.id ? null : current,
+      )
+      closeDeleteModal()
+    } catch (err) {
+      setDeleteError(
+        err instanceof ApiError
+          ? err.message
+          : 'Unable to delete client. Try again.',
+      )
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  function handleCloseDeleteModal() {
+    if (isDeleting) return
+    setDeleteError(null)
     closeDeleteModal()
+  }
+
+  if (loadStatus === 'loading') {
+    return (
+      <div className="clients clients-state">
+        <p className="clients-state__message">Loading clients…</p>
+      </div>
+    )
+  }
+
+  if (loadStatus === 'error') {
+    return (
+      <div className="clients clients-state">
+        <p className="clients-state__message clients-state__message--error">
+          {loadError}
+        </p>
+        <button type="button" className="btn btn--secondary" onClick={fetchClients}>
+          Try again
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -100,7 +210,7 @@ export default function Clients() {
         <button
           type="button"
           className="btn btn--primary"
-          onClick={openAddModal}
+          onClick={handleOpenAddModal}
         >
           <IconPlus />
           Add Client
@@ -165,7 +275,7 @@ export default function Clients() {
                   </td>
                   <td className="clients-table__align-right">
                     <TableActions
-                      onEdit={() => openEditModal(client)}
+                      onEdit={() => handleOpenEditModal(client)}
                       onDelete={() => openDeleteModal(client)}
                     />
                   </td>
@@ -175,8 +285,9 @@ export default function Clients() {
               <TableEmptyState colSpan={6} className="clients-table__empty">
                 <span className="clients-table__empty-title">No clients found</span>
                 <span className="clients-table__empty-hint">
-                  No results for &ldquo;{trimmedQuery}&rdquo;. Try another
-                  company, contact, or email.
+                  {trimmedQuery
+                    ? `No results for “${trimmedQuery}”. Try another company, contact, or email.`
+                    : 'Add your first client to get started.'}
                 </span>
               </TableEmptyState>
             )}
@@ -189,12 +300,14 @@ export default function Clients() {
         client={editingClient}
         onClose={closeModal}
         onSave={handleSaveClient}
+        isSaving={isSaving}
+        saveError={saveError}
       />
 
       <ClientDetailDrawer
         client={selectedClient}
         onClose={closeDrawer}
-        onEdit={openEditModal}
+        onEdit={handleOpenEditModal}
         onDelete={openDeleteModal}
       />
 
@@ -206,7 +319,10 @@ export default function Clients() {
             ? `${deletingClient.company} will be permanently removed from your client list. This action cannot be undone.`
             : ''
         }
-        onClose={closeDeleteModal}
+        error={deleteError}
+        isConfirming={isDeleting}
+        confirmLabel="Delete"
+        onClose={handleCloseDeleteModal}
         onConfirm={confirmDeleteClient}
       />
     </div>

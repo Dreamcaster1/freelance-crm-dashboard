@@ -1,0 +1,79 @@
+import { formatRelativeActivity } from './format.js'
+
+export const MAX_PROJECT_VALUE_CENTS = 4294967295
+export const MAX_PROJECT_VALUE_DOLLARS = MAX_PROJECT_VALUE_CENTS / 100
+
+function parseProjectValueDollars(value) {
+  if (!value?.trim()) return 0
+
+  const normalized = value.replace(/[^0-9.]/g, '')
+  const dollars = Number(normalized)
+
+  if (!Number.isFinite(dollars) || dollars < 0) return null
+  return dollars
+}
+
+export function validateProjectValueDollars(value) {
+  if (!value?.trim()) return null
+
+  const normalized = value.replace(/[^0-9.]/g, '')
+
+  if (!normalized || !/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    return 'Project value must be a valid amount.'
+  }
+
+  const dollars = Number(normalized)
+
+  if (!Number.isFinite(dollars) || dollars < 0) {
+    return 'Project value must be a valid amount.'
+  }
+
+  const cents = Math.round(dollars * 100)
+
+  if (cents > MAX_PROJECT_VALUE_CENTS) {
+    return 'Project value is too large.'
+  }
+
+  return null
+}
+
+export function mapClientFromApi(apiClient) {
+  return {
+    id: apiClient.id,
+    company: apiClient.company,
+    contact: apiClient.contactName,
+    email: apiClient.email,
+    status: apiClient.status,
+    projectValue: apiClient.projectValueCents / 100,
+    lastActivity: formatRelativeActivity(apiClient.lastActivityAt),
+    lastActivityAt: apiClient.lastActivityAt,
+  }
+}
+
+export function mapClientsFromApi(apiClients) {
+  return apiClients.map(mapClientFromApi)
+}
+
+export function mapClientFormToApiPayload(form) {
+  const dollars = parseProjectValueDollars(form.projectValue)
+  const projectValueCents =
+    dollars === null ? null : Math.round(dollars * 100)
+
+  return {
+    company: form.company.trim(),
+    contact_name: form.contact.trim(),
+    email: form.email.trim(),
+    status: form.status,
+    project_value_cents: projectValueCents ?? 0,
+  }
+}
+
+export function mapClientToForm(client) {
+  return {
+    company: client.company,
+    contact: client.contact,
+    email: client.email,
+    status: client.status,
+    projectValue: client.projectValue ? String(client.projectValue) : '',
+  }
+}

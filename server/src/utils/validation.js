@@ -87,3 +87,47 @@ export function parseDateTimeOrNull(value, fieldName = 'last_activity_at') {
 
   return { value: new Date(value) }
 }
+
+export const MAX_PROJECT_VALUE_CENTS = 4294967295
+
+const MAX_PROJECT_VALUE_CENTS_BIGINT = BigInt(MAX_PROJECT_VALUE_CENTS)
+
+export function parseProjectValueCents(raw) {
+  if (raw === undefined) {
+    return { omitted: true }
+  }
+
+  if (raw === null) {
+    return { error: 'Project value must be a valid amount.' }
+  }
+
+  let centsBigInt
+
+  if (typeof raw === 'number') {
+    if (!Number.isFinite(raw) || !Number.isInteger(raw)) {
+      return { error: 'Project value must be a valid amount.' }
+    }
+
+    centsBigInt = BigInt(raw)
+  } else if (typeof raw === 'string') {
+    const trimmed = raw.trim()
+
+    if (!trimmed || /[eE.]/.test(trimmed) || !/^-?\d+$/.test(trimmed)) {
+      return { error: 'Project value must be a valid amount.' }
+    }
+
+    centsBigInt = BigInt(trimmed)
+  } else {
+    return { error: 'Project value must be a valid amount.' }
+  }
+
+  if (centsBigInt < 0n) {
+    return { error: 'Project value must be a valid amount.' }
+  }
+
+  if (centsBigInt > MAX_PROJECT_VALUE_CENTS_BIGINT) {
+    return { error: 'Project value is too large.' }
+  }
+
+  return { value: Number(centsBigInt) }
+}

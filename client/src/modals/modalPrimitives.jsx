@@ -37,14 +37,27 @@ export function ModalBody({ children }) {
   return <div className="modal__body">{children}</div>
 }
 
-export function ModalFooter({ onClose, submitLabel = 'Save' }) {
+export function ModalFooter({
+  onClose,
+  submitLabel = 'Save',
+  isSubmitting = false,
+}) {
   return (
     <footer className="modal__footer">
-      <button type="button" className="btn btn--secondary" onClick={onClose}>
+      <button
+        type="button"
+        className="btn btn--secondary"
+        onClick={onClose}
+        disabled={isSubmitting}
+      >
         Cancel
       </button>
-      <button type="submit" className="btn btn--primary">
-        {submitLabel}
+      <button
+        type="submit"
+        className="btn btn--primary"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? 'Saving…' : submitLabel}
       </button>
     </footer>
   )
