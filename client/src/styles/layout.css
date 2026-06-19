@@ -261,6 +261,17 @@
   white-space: nowrap;
 }
 
+.sidebar-user__logout {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.sidebar-user__logout-error {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--danger);
+}
+
 /* Main layout */
 
 .main {

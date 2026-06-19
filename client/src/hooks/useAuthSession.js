@@ -63,11 +63,8 @@ export default function useAuthSession() {
   )
 
   const logout = useCallback(async () => {
-    try {
-      await authApi.logout()
-    } finally {
-      clearSession()
-    }
+    await authApi.logout()
+    clearSession()
   }, [clearSession])
 
   return {

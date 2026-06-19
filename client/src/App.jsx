@@ -4,16 +4,35 @@ import Clients from './Clients'
 import Dashboard from './Dashboard'
 import Settings from './Settings'
 import Tasks from './Tasks'
+import { ApiError } from './api/client.js'
 import { NAV_ITEMS, PAGES } from './config/navigation'
 import useAuthSession from './hooks/useAuthSession'
 import { IconChevronDown } from './icons'
 import { getInitials } from './utils/format'
 import './App.css'
 
-function AppShell({ user, workspace, activePage, onNavigate }) {
+function AppShell({ user, workspace, activePage, onNavigate, onLogout }) {
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [logoutError, setLogoutError] = useState(null)
   const page = PAGES[activePage]
   const workspaceInitials = workspace ? getInitials(workspace.name) : '—'
   const userInitials = user ? getInitials(user.name) : '—'
+
+  async function handleLogout() {
+    setLogoutError(null)
+    setIsLoggingOut(true)
+
+    try {
+      await onLogout()
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Unable to log out. Try again.'
+      setLogoutError(message)
+      console.error('Logout failed:', message)
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <div className="app">
@@ -72,7 +91,18 @@ function AppShell({ user, workspace, activePage, onNavigate }) {
             <span className="sidebar-user__role">
               {workspace.role ?? 'Member'}
             </span>
+            {logoutError ? (
+              <span className="sidebar-user__logout-error">{logoutError}</span>
+            ) : null}
           </div>
+          <button
+            type="button"
+            className="btn btn--sm btn--secondary sidebar-user__logout"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? 'Signing out…' : 'Sign out'}
+          </button>
         </div>
       </aside>
 
@@ -131,6 +161,7 @@ function App() {
       workspace={auth.workspace}
       activePage={activePage}
       onNavigate={setActivePage}
+      onLogout={auth.logout}
     />
   )
 }
