@@ -9,6 +9,10 @@ import {
   mapClientResponse,
   mapClientResponses,
 } from '../utils/clientMapper.js'
+import {
+  assertJsonObject,
+  validateDateTimeOrNull,
+} from '../utils/validation.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const VALID_STATUSES = ['active', 'lead', 'on-hold', 'at-risk', 'inactive']
@@ -35,21 +39,17 @@ function validateProjectValueCents(value) {
   return null
 }
 
-function validateLastActivityAt(value) {
-  if (value === null) return null
-
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) {
-    return 'last_activity_at must be a valid date or null.'
-  }
-  return null
-}
 
 function validateCreateBody(body) {
-  const company = body?.company?.trim()
-  const contactName = body?.contact_name?.trim()
-  const email = body?.email?.trim()
-  const status = body?.status ?? 'active'
+  const bodyError = assertJsonObject(body)
+  if (bodyError) {
+    return { error: bodyError }
+  }
+
+  const company = body.company?.trim()
+  const contactName = body.contact_name?.trim()
+  const email = body.email?.trim()
+  const status = body.status ?? 'active'
 
   if (!company) {
     return { error: 'company is required.' }
@@ -85,7 +85,7 @@ function validateCreateBody(body) {
   }
 
   let projectValueCents = 0
-  if (body?.project_value_cents !== undefined) {
+  if (body.project_value_cents !== undefined) {
     projectValueCents = Number(body.project_value_cents)
     const valueError = validateProjectValueCents(projectValueCents)
     if (valueError) {
@@ -94,11 +94,11 @@ function validateCreateBody(body) {
   }
 
   let lastActivityAt = new Date()
-  if (body?.last_activity_at !== undefined) {
+  if (body.last_activity_at !== undefined) {
     if (body.last_activity_at === null) {
       lastActivityAt = null
     } else {
-      const dateError = validateLastActivityAt(body.last_activity_at)
+      const dateError = validateDateTimeOrNull(body.last_activity_at)
       if (dateError) {
         return { error: dateError }
       }
@@ -119,8 +119,9 @@ function validateCreateBody(body) {
 }
 
 function validatePatchBody(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return { error: 'Request body must be a JSON object.' }
+  const bodyError = assertJsonObject(body)
+  if (bodyError) {
+    return { error: bodyError }
   }
 
   const allowedFields = [
@@ -196,7 +197,7 @@ function validatePatchBody(body) {
     if (body.last_activity_at === null) {
       fields.lastActivityAt = null
     } else {
-      const dateError = validateLastActivityAt(body.last_activity_at)
+      const dateError = validateDateTimeOrNull(body.last_activity_at)
       if (dateError) {
         return { error: dateError }
       }

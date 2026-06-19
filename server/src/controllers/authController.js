@@ -7,6 +7,7 @@ import {
   findWorkspaceById,
   findWorkspaceBySlug,
 } from '../models/userModel.js'
+import { assertJsonObject } from '../utils/validation.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -56,7 +57,12 @@ async function buildAuthResponse(userId, workspaceId) {
 }
 
 export async function register(req, res) {
-  const { name, email, password, workspaceName } = req.body ?? {}
+  const bodyError = assertJsonObject(req.body)
+  if (bodyError) {
+    return res.status(400).json({ ok: false, error: bodyError })
+  }
+
+  const { name, email, password, workspaceName } = req.body
 
   if (!name?.trim()) {
     return res.status(400).json({ ok: false, error: 'Name is required.' })
@@ -121,7 +127,12 @@ export async function register(req, res) {
 }
 
 export async function login(req, res) {
-  const { email, password } = req.body ?? {}
+  const bodyError = assertJsonObject(req.body)
+  if (bodyError) {
+    return res.status(400).json({ ok: false, error: bodyError })
+  }
+
+  const { email, password } = req.body
 
   if (!email?.trim() || !EMAIL_PATTERN.test(email.trim())) {
     return res.status(400).json({ ok: false, error: 'Valid email is required.' })

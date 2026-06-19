@@ -7,6 +7,7 @@ import {
   updateTask,
 } from '../models/taskModel.js'
 import { mapTaskResponse, mapTaskResponses } from '../utils/taskMapper.js'
+import { assertJsonObject, validateCalendarDate } from '../utils/validation.js'
 
 const VALID_STATUSES = ['in-progress', 'pending', 'completed']
 const VALID_PRIORITIES = ['high', 'medium', 'low']
@@ -46,22 +47,6 @@ function validatePriority(priority) {
   return null
 }
 
-function validateDueDate(value) {
-  if (value === null || value === undefined) {
-    return null
-  }
-
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return 'due_date must be a valid date in YYYY-MM-DD format or null.'
-  }
-
-  const parsed = new Date(`${value}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) {
-    return 'due_date must be a valid date in YYYY-MM-DD format or null.'
-  }
-
-  return null
-}
 
 function normalizeDescription(value) {
   if (value === null || value === undefined) {
@@ -110,9 +95,14 @@ async function resolveClientReference(workspaceId, rawClientId) {
 }
 
 function validateCreateBody(body) {
-  const name = body?.name?.trim()
-  const status = body?.status ?? 'pending'
-  const priority = body?.priority ?? 'medium'
+  const bodyError = assertJsonObject(body)
+  if (bodyError) {
+    return { error: bodyError }
+  }
+
+  const name = body.name?.trim()
+  const status = body.status ?? 'pending'
+  const priority = body.priority ?? 'medium'
 
   if (!name) {
     return { error: 'name is required.' }
@@ -133,15 +123,15 @@ function validateCreateBody(body) {
   }
 
   let dueDate = null
-  if (body?.due_date !== undefined) {
-    const dateError = validateDueDate(body.due_date)
+  if (body.due_date !== undefined) {
+    const dateError = validateCalendarDate(body.due_date)
     if (dateError) {
       return { error: dateError }
     }
     dueDate = body.due_date
   }
 
-  const snapshotResult = normalizeClientNameSnapshot(body?.client_name_snapshot)
+  const snapshotResult = normalizeClientNameSnapshot(body.client_name_snapshot)
   if (snapshotResult?.error) {
     return { error: snapshotResult.error }
   }
@@ -152,16 +142,17 @@ function validateCreateBody(body) {
       status,
       priority,
       dueDate,
-      description: normalizeDescription(body?.description),
+      description: normalizeDescription(body.description),
       clientNameSnapshot: snapshotResult?.value ?? null,
-      rawClientId: body?.client_id,
+      rawClientId: body.client_id,
     },
   }
 }
 
 function validatePatchBody(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return { error: 'Request body must be a JSON object.' }
+  const bodyError = assertJsonObject(body)
+  if (bodyError) {
+    return { error: bodyError }
   }
 
   const allowedFields = [
@@ -221,7 +212,7 @@ function validatePatchBody(body) {
   }
 
   if (body.due_date !== undefined) {
-    const dateError = validateDueDate(body.due_date)
+    const dateError = validateCalendarDate(body.due_date)
     if (dateError) {
       return { error: dateError }
     }
