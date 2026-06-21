@@ -116,7 +116,7 @@ function AppShell({ user, workspace, activePage, onNavigate, onLogout }) {
 
         <main className="content">
           {activePage === 'dashboard' ? (
-            <Dashboard />
+            <Dashboard onNavigate={onNavigate} />
           ) : activePage === 'clients' ? (
             <Clients />
           ) : activePage === 'tasks' ? (

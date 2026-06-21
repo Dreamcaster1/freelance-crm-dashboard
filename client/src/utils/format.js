@@ -57,6 +57,32 @@ export function formatDueDate(dateValue) {
   })
 }
 
+export function formatGBP(cents) {
+  const amount = (Number.isFinite(cents) ? cents : 0) / 100
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
+export function parseDateOnlyInt(yyyymmdd) {
+  if (!yyyymmdd || !/^\d{4}-\d{2}-\d{2}$/.test(yyyymmdd)) return null
+  const [year, month, day] = yyyymmdd.split('-').map(Number)
+  return year * 10000 + month * 100 + day
+}
+
+export function todayDateInt() {
+  const d = new Date()
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()
+}
+
+export function futureDateInt(daysAhead) {
+  const d = new Date()
+  d.setDate(d.getDate() + daysAhead)
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()
+}
+
 export function parseDueDateToInput(dueDate) {
   if (!dueDate || dueDate === '—') return ''
 
