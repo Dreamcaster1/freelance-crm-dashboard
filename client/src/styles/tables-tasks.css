@@ -6,6 +6,23 @@
   gap: 16px;
 }
 
+.tasks-state {
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  text-align: center;
+}
+
+.tasks-state__message {
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.tasks-state__message--error {
+  color: var(--danger);
+}
+
 .tasks-toolbar {
   display: flex;
   align-items: center;

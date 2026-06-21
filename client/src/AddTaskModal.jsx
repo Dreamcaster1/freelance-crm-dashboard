@@ -8,25 +8,16 @@ import {
   ModalHeader,
   ModalShell,
 } from './modals/modalPrimitives'
+import { mapTaskToForm } from './utils/taskMapper'
 import { TASK_PRIORITY_OPTIONS, TASK_STATUS_OPTIONS } from './utils/badges'
-import { formatDueDate, parseDueDateToInput } from './utils/format'
 
 const EMPTY_FORM = {
   name: '',
-  client: '',
+  clientId: '',
   status: 'pending',
   priority: 'medium',
   dueDate: '',
-}
-
-function taskToForm(task) {
-  return {
-    name: task.name,
-    client: task.client,
-    status: task.status,
-    priority: task.priority,
-    dueDate: parseDueDateToInput(task.dueDate),
-  }
+  description: '',
 }
 
 function validateForm(form) {
@@ -36,14 +27,18 @@ function validateForm(form) {
     errors.name = 'Task name is required.'
   }
 
-  if (!form.client.trim()) {
-    errors.client = 'Client is required.'
-  }
-
   return errors
 }
 
-export default function AddTaskModal({ isOpen, task, onClose, onSave }) {
+export default function AddTaskModal({
+  isOpen,
+  task,
+  clients,
+  onClose,
+  onSave,
+  isSaving = false,
+  saveError = null,
+}) {
   useOverlayLock(isOpen)
 
   if (!isOpen) return null
@@ -52,16 +47,29 @@ export default function AddTaskModal({ isOpen, task, onClose, onSave }) {
     <TaskModalContent
       key={task?.id ?? 'new-task'}
       task={task}
+      clients={clients}
       onClose={onClose}
       onSave={onSave}
+      isSaving={isSaving}
+      saveError={saveError}
     />
   )
 }
 
-function TaskModalContent({ task, onClose, onSave }) {
-  const [form, setForm] = useState(() => (task ? taskToForm(task) : EMPTY_FORM))
+function TaskModalContent({
+  task,
+  clients,
+  onClose,
+  onSave,
+  isSaving,
+  saveError,
+}) {
+  const [form, setForm] = useState(() => (task ? mapTaskToForm(task) : EMPTY_FORM))
   const [errors, setErrors] = useState({})
   const isEditing = Boolean(task)
+  const hasLinkedClient = Boolean(
+    task?.clientId && clients.some((client) => client.id === task.clientId),
+  )
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -74,7 +82,7 @@ function TaskModalContent({ task, onClose, onSave }) {
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
     const validationErrors = validateForm(form)
@@ -83,14 +91,7 @@ function TaskModalContent({ task, onClose, onSave }) {
       return
     }
 
-    onSave({
-      id: task?.id ?? `t${Date.now()}`,
-      name: form.name.trim(),
-      client: form.client.trim(),
-      status: form.status,
-      priority: form.priority,
-      dueDate: formatDueDate(form.dueDate),
-    })
+    await onSave(form)
   }
 
   return (
@@ -114,17 +115,28 @@ function TaskModalContent({ task, onClose, onSave }) {
               className={`field-input${errors.name ? ' field-input--error' : ''}`}
               value={form.name}
               onChange={(event) => updateField('name', event.target.value)}
+              disabled={isSaving}
             />
           </ModalField>
 
-          <ModalField label="Client" htmlFor="task-client" error={errors.client}>
-            <input
+          <ModalField label="Client" htmlFor="task-client">
+            <select
               id="task-client"
-              type="text"
-              className={`field-input${errors.client ? ' field-input--error' : ''}`}
-              value={form.client}
-              onChange={(event) => updateField('client', event.target.value)}
-            />
+              className="field-select"
+              value={form.clientId}
+              onChange={(event) => updateField('clientId', event.target.value)}
+              disabled={isSaving}
+            >
+              <option value="">No client</option>
+              {task?.clientId && !hasLinkedClient ? (
+                <option value={String(task.clientId)}>{task.client}</option>
+              ) : null}
+              {clients.map((client) => (
+                <option key={client.id} value={String(client.id)}>
+                  {client.company}
+                </option>
+              ))}
+            </select>
           </ModalField>
 
           <ModalField label="Status" htmlFor="task-status">
@@ -133,6 +145,7 @@ function TaskModalContent({ task, onClose, onSave }) {
               className="field-select"
               value={form.status}
               onChange={(event) => updateField('status', event.target.value)}
+              disabled={isSaving}
             >
               {TASK_STATUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -148,6 +161,7 @@ function TaskModalContent({ task, onClose, onSave }) {
               className="field-select"
               value={form.priority}
               onChange={(event) => updateField('priority', event.target.value)}
+              disabled={isSaving}
             >
               {TASK_PRIORITY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -164,11 +178,29 @@ function TaskModalContent({ task, onClose, onSave }) {
               className="field-input"
               value={form.dueDate}
               onChange={(event) => updateField('dueDate', event.target.value)}
+              disabled={isSaving}
             />
           </ModalField>
+
+          <ModalField label="Description" htmlFor="task-description">
+            <textarea
+              id="task-description"
+              className="field-input"
+              rows={3}
+              value={form.description}
+              onChange={(event) => updateField('description', event.target.value)}
+              disabled={isSaving}
+            />
+          </ModalField>
+
+          {saveError ? <p className="field-error">{saveError}</p> : null}
         </ModalBody>
 
-        <ModalFooter onClose={onClose} />
+        <ModalFooter
+          onClose={onClose}
+          isSubmitting={isSaving}
+          submitLabel={isEditing ? 'Save changes' : 'Add task'}
+        />
       </ModalForm>
     </ModalShell>
   )

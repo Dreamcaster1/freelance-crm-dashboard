@@ -11,7 +11,9 @@ function getTaskDetails(taskId) {
 export default function TaskDetailDrawer({ task, onClose, onEdit, onDelete }) {
   if (!task) return null
 
-  const { description, activity } = getTaskDetails(task.id)
+  const { activity } = getTaskDetails(task.id)
+  const description =
+    task.description?.trim() || 'No notes added for this task yet.'
   const isCompleted = task.status === 'completed'
 
   return (

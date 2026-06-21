@@ -57,23 +57,6 @@ function normalizeDescription(value) {
   return trimmed || null
 }
 
-function normalizeClientNameSnapshot(value) {
-  if (value === null || value === undefined) {
-    return null
-  }
-
-  const trimmed = String(value).trim()
-  if (!trimmed) {
-    return null
-  }
-
-  if (trimmed.length > 160) {
-    return { error: 'client_name_snapshot must be 160 characters or fewer.' }
-  }
-
-  return { value: trimmed }
-}
-
 async function resolveClientReference(workspaceId, rawClientId) {
   const parsed = parseOptionalClientId(rawClientId)
 
@@ -82,7 +65,7 @@ async function resolveClientReference(workspaceId, rawClientId) {
   }
 
   if (parsed.clientId === null) {
-    return { clientId: null }
+    return { clientId: null, clientNameSnapshot: null }
   }
 
   const client = await findClientById(workspaceId, parsed.clientId)
@@ -91,7 +74,10 @@ async function resolveClientReference(workspaceId, rawClientId) {
     return { error: 'Client not found.', statusCode: 404 }
   }
 
-  return { clientId: parsed.clientId, client }
+  return {
+    clientId: parsed.clientId,
+    clientNameSnapshot: client.company,
+  }
 }
 
 function validateCreateBody(body) {
@@ -131,11 +117,6 @@ function validateCreateBody(body) {
     dueDate = body.due_date
   }
 
-  const snapshotResult = normalizeClientNameSnapshot(body.client_name_snapshot)
-  if (snapshotResult?.error) {
-    return { error: snapshotResult.error }
-  }
-
   return {
     data: {
       name,
@@ -143,7 +124,6 @@ function validateCreateBody(body) {
       priority,
       dueDate,
       description: normalizeDescription(body.description),
-      clientNameSnapshot: snapshotResult?.value ?? null,
       rawClientId: body.client_id,
     },
   }
@@ -157,7 +137,6 @@ function validatePatchBody(body) {
 
   const allowedFields = [
     'client_id',
-    'client_name_snapshot',
     'name',
     'status',
     'priority',
@@ -174,14 +153,6 @@ function validatePatchBody(body) {
 
   if (body.client_id !== undefined) {
     fields.rawClientId = body.client_id
-  }
-
-  if (body.client_name_snapshot !== undefined) {
-    const snapshotResult = normalizeClientNameSnapshot(body.client_name_snapshot)
-    if (snapshotResult?.error) {
-      return { error: snapshotResult.error }
-    }
-    fields.clientNameSnapshot = snapshotResult?.value ?? null
   }
 
   if (body.name !== undefined) {
@@ -289,7 +260,7 @@ export async function createTaskHandler(req, res) {
 
   const task = await createTask(workspaceId, {
     clientId: clientRef.clientId,
-    clientNameSnapshot: validation.data.clientNameSnapshot,
+    clientNameSnapshot: clientRef.clientNameSnapshot,
     name: validation.data.name,
     status: validation.data.status,
     priority: validation.data.priority,
@@ -338,6 +309,7 @@ export async function updateTaskHandler(req, res) {
     }
 
     updateFields.clientId = clientRef.clientId
+    updateFields.clientNameSnapshot = clientRef.clientNameSnapshot
     delete updateFields.rawClientId
   }
 

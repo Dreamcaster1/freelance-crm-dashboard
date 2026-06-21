@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import AddTaskModal from './AddTaskModal'
+import * as clientsApi from './api/clients.js'
+import * as tasksApi from './api/tasks.js'
+import { ApiError } from './api/client.js'
 import useConfirmDeleteState from './hooks/useConfirmDeleteState'
 import useEditModalState from './hooks/useEditModalState'
 import useSelectionState from './hooks/useSelectionState'
 import Badge from './Badge'
 import ConfirmModal from './ConfirmModal'
 import TaskDetailDrawer from './TaskDetailDrawer'
-import { INITIAL_TASKS } from './data/tasks'
 import { IconPlus } from './icons'
 import {
   SelectableTableRow,
@@ -14,6 +16,11 @@ import {
   TableCard,
   TableEmptyState,
 } from './tables/tablePrimitives'
+import {
+  mapTaskFormToApiPayload,
+  mapTaskFromApi,
+  mapTasksFromApi,
+} from './utils/taskMapper'
 import { getTaskPriorityBadge, getTaskStatusBadge } from './utils/badges'
 
 const FILTERS = [
@@ -24,8 +31,15 @@ const FILTERS = [
 ]
 
 export default function Tasks() {
-  const [tasks, setTasks] = useState(INITIAL_TASKS)
+  const [tasks, setTasks] = useState([])
+  const [clients, setClients] = useState([])
+  const [loadStatus, setLoadStatus] = useState('loading')
+  const [loadError, setLoadError] = useState(null)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
   const {
     isOpen: isModalOpen,
     editingItem: editingTask,
@@ -45,6 +59,40 @@ export default function Tasks() {
     closeSelection: closeDrawer,
   } = useSelectionState()
 
+  const fetchTasksPage = useCallback(async () => {
+    setLoadStatus('loading')
+    setLoadError(null)
+
+    try {
+      const [tasksData, clientsData] = await Promise.all([
+        tasksApi.listTasks(),
+        clientsApi.listClients(),
+      ])
+
+      setTasks(mapTasksFromApi(tasksData.tasks))
+      setClients(
+        clientsData.clients.map((client) => ({
+          id: client.id,
+          company: client.company,
+        })),
+      )
+      setLoadStatus('ready')
+    } catch (err) {
+      setTasks([])
+      setClients([])
+      setLoadStatus('error')
+      setLoadError(
+        err instanceof ApiError
+          ? err.message
+          : 'Unable to load tasks. Try again.',
+      )
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchTasksPage()
+  }, [fetchTasksPage])
+
   const filteredTasks = useMemo(() => {
     if (activeFilter === 'all') return tasks
     return tasks.filter((task) => task.status === activeFilter)
@@ -59,26 +107,101 @@ export default function Tasks() {
     }
   }, [tasks])
 
-  function handleSaveTask(task) {
-    if (editingTask) {
-      setTasks((current) =>
-        current.map((item) => (item.id === task.id ? task : item)),
-      )
-      setSelectedTask((current) => (current?.id === task.id ? task : current))
-    } else {
-      setTasks((current) => [task, ...current])
-    }
-    closeModal()
+  function handleOpenAddModal() {
+    setSaveError(null)
+    openAddModal()
   }
 
-  function confirmDeleteTask() {
+  function handleOpenEditModal(task) {
+    setSaveError(null)
+    openEditModal(task)
+  }
+
+  async function handleSaveTask(form) {
+    setIsSaving(true)
+    setSaveError(null)
+
+    const payload = mapTaskFormToApiPayload(form)
+
+    try {
+      if (editingTask) {
+        const data = await tasksApi.updateTask(editingTask.id, payload)
+        const savedTask = mapTaskFromApi(data.task)
+
+        setTasks((current) =>
+          current.map((item) => (item.id === savedTask.id ? savedTask : item)),
+        )
+        setSelectedTask((current) =>
+          current?.id === savedTask.id ? savedTask : current,
+        )
+      } else {
+        const data = await tasksApi.createTask(payload)
+        const savedTask = mapTaskFromApi(data.task)
+        setTasks((current) => [savedTask, ...current])
+      }
+
+      closeModal()
+    } catch (err) {
+      setSaveError(
+        err instanceof ApiError
+          ? err.message
+          : 'Unable to save task. Try again.',
+      )
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function confirmDeleteTask() {
     if (!deletingTask) return
 
-    setTasks((current) => current.filter((item) => item.id !== deletingTask.id))
-    setSelectedTask((current) =>
-      current?.id === deletingTask.id ? null : current,
-    )
+    setIsDeleting(true)
+    setDeleteError(null)
+
+    try {
+      await tasksApi.deleteTask(deletingTask.id)
+
+      setTasks((current) => current.filter((item) => item.id !== deletingTask.id))
+      setSelectedTask((current) =>
+        current?.id === deletingTask.id ? null : current,
+      )
+      closeDeleteModal()
+    } catch (err) {
+      setDeleteError(
+        err instanceof ApiError
+          ? err.message
+          : 'Unable to delete task. Try again.',
+      )
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  function handleCloseDeleteModal() {
+    if (isDeleting) return
+    setDeleteError(null)
     closeDeleteModal()
+  }
+
+  if (loadStatus === 'loading') {
+    return (
+      <div className="tasks tasks-state">
+        <p className="tasks-state__message">Loading tasks…</p>
+      </div>
+    )
+  }
+
+  if (loadStatus === 'error') {
+    return (
+      <div className="tasks tasks-state">
+        <p className="tasks-state__message tasks-state__message--error">
+          {loadError}
+        </p>
+        <button type="button" className="btn btn--secondary" onClick={fetchTasksPage}>
+          Try again
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -101,7 +224,7 @@ export default function Tasks() {
         <button
           type="button"
           className="btn btn--primary"
-          onClick={openAddModal}
+          onClick={handleOpenAddModal}
         >
           <IconPlus />
           New Task
@@ -160,7 +283,7 @@ export default function Tasks() {
                   </td>
                   <td className="tasks-table__align-right">
                     <TableActions
-                      onEdit={() => openEditModal(task)}
+                      onEdit={() => handleOpenEditModal(task)}
                       onDelete={() => openDeleteModal(task)}
                     />
                   </td>
@@ -168,7 +291,9 @@ export default function Tasks() {
               ))
             ) : (
               <TableEmptyState colSpan={6} className="tasks-table__empty">
-                No tasks match this filter.
+                {tasks.length === 0
+                  ? 'No tasks yet. Add your first task to get started.'
+                  : 'No tasks match this filter.'}
               </TableEmptyState>
             )}
           </tbody>
@@ -178,14 +303,17 @@ export default function Tasks() {
       <AddTaskModal
         isOpen={isModalOpen}
         task={editingTask}
+        clients={clients}
         onClose={closeModal}
         onSave={handleSaveTask}
+        isSaving={isSaving}
+        saveError={saveError}
       />
 
       <TaskDetailDrawer
         task={selectedTask}
         onClose={closeDrawer}
-        onEdit={openEditModal}
+        onEdit={handleOpenEditModal}
         onDelete={openDeleteModal}
       />
 
@@ -197,7 +325,10 @@ export default function Tasks() {
             ? `"${deletingTask.name}" will be permanently removed from your task list. This action cannot be undone.`
             : ''
         }
-        onClose={closeDeleteModal}
+        error={deleteError}
+        isConfirming={isDeleting}
+        confirmLabel="Delete"
+        onClose={handleCloseDeleteModal}
         onConfirm={confirmDeleteTask}
       />
     </div>

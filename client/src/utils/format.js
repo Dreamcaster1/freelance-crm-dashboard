@@ -60,6 +60,8 @@ export function formatDueDate(dateValue) {
 export function parseDueDateToInput(dueDate) {
   if (!dueDate || dueDate === '—') return ''
 
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return dueDate
+
   const parsed = new Date(dueDate)
   if (Number.isNaN(parsed.getTime())) return ''
 
