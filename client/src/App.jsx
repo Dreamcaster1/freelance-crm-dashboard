@@ -205,7 +205,16 @@ function AppRoutes({ auth }) {
           <Route path="clients" element={<Clients />} />
           <Route path="pipeline" element={<Pipeline />} />
           <Route path="tasks" element={<Tasks />} />
-          <Route path="settings" element={<Settings />} />
+          <Route
+            path="settings"
+            element={
+              <Settings
+                user={auth.user}
+                workspace={auth.workspace}
+                onLogout={auth.logout}
+              />
+            }
+          />
         </Route>
       </Route>
 

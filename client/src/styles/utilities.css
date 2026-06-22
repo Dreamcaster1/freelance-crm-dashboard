@@ -250,45 +250,27 @@
     justify-content: flex-start;
   }
 
-  .settings-field,
-  .settings-toggle,
-  .settings-sessions {
+  .settings-detail {
     flex-direction: column;
-    gap: 12px;
+    gap: 6px;
     padding: 16px 20px;
   }
 
-  .settings-field__label,
-  .settings-toggle__label,
-  .settings-sessions__info {
+  .settings-detail__term,
+  .settings-detail__value {
     max-width: none;
-  }
-
-  .settings-field__control {
-    max-width: none;
-  }
-
-  .settings-toggle {
-    align-items: flex-start;
-  }
-
-  .settings-sessions {
-    align-items: flex-start;
+    text-align: left;
   }
 
   .settings-section__header {
     padding: 18px 20px 16px;
   }
 
-  .settings-profile {
+  .settings-session {
     padding: 16px 20px;
   }
 
-  .settings-actions {
-    justify-content: stretch;
-  }
-
-  .settings-actions .btn {
+  .settings-session .btn {
     width: 100%;
     justify-content: center;
   }

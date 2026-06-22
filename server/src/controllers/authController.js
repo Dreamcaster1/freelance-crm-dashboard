@@ -37,7 +37,7 @@ function setSessionUser(req, userId, workspaceId) {
   req.session.workspaceId = workspaceId
 }
 
-async function buildAuthResponse(userId, workspaceId) {
+async function buildAuthResponse(userId, workspaceId, workspaceRole = null) {
   const user = await findUserById(userId)
   const workspace = await findWorkspaceById(workspaceId)
 
@@ -52,6 +52,7 @@ async function buildAuthResponse(userId, workspaceId) {
       id: workspace.id,
       name: workspace.name,
       slug: workspace.slug,
+      role: workspaceRole,
     },
   }
 }
@@ -109,7 +110,12 @@ export async function register(req, res) {
 
     setSessionUser(req, userId, workspaceId)
 
-    const response = await buildAuthResponse(userId, workspaceId)
+    const membership = await findPrimaryWorkspaceForUser(userId)
+    const response = await buildAuthResponse(
+      userId,
+      workspaceId,
+      membership?.id === workspaceId ? membership.role : null,
+    )
     return res.status(201).json(response)
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -166,16 +172,8 @@ export async function login(req, res) {
 
   setSessionUser(req, user.id, workspace.id)
 
-  const response = await buildAuthResponse(user.id, workspace.id)
-  return res.json({
-    ...response,
-    workspace: {
-      id: workspace.id,
-      name: workspace.name,
-      slug: workspace.slug,
-      role: workspace.role,
-    },
-  })
+  const response = await buildAuthResponse(user.id, workspace.id, workspace.role)
+  return res.json(response)
 }
 
 export function logout(req, res) {
@@ -197,18 +195,11 @@ export function logout(req, res) {
 }
 
 export async function me(req, res) {
+  const workspace = await findPrimaryWorkspaceForUser(req.session.userId)
   const response = await buildAuthResponse(
     req.session.userId,
     req.session.workspaceId,
+    workspace?.id === req.session.workspaceId ? workspace.role : null,
   )
-
-  const workspace = await findPrimaryWorkspaceForUser(req.session.userId)
-
-  return res.json({
-    ...response,
-    workspace: {
-      ...response.workspace,
-      role: workspace?.role ?? null,
-    },
-  })
+  return res.json(response)
 }
