@@ -9,13 +9,14 @@ import {
   ModalShell,
 } from './modals/modalPrimitives'
 import { mapClientToForm, validateProjectValueDollars } from './utils/clientMapper'
-import { CLIENT_STATUS_OPTIONS } from './utils/badges'
+import { CLIENT_STATUS_OPTIONS, PIPELINE_STAGE_OPTIONS } from './utils/badges'
 
 const EMPTY_FORM = {
   company: '',
   contact: '',
   email: '',
   status: 'active',
+  pipelineStage: 'lead',
   projectValue: '',
 }
 
@@ -168,6 +169,24 @@ function ClientModalContent({
               disabled={isSaving}
             >
               {CLIENT_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </ModalField>
+
+          <ModalField label="Pipeline stage" htmlFor="client-pipeline-stage">
+            <select
+              id="client-pipeline-stage"
+              className="field-select"
+              value={form.pipelineStage}
+              onChange={(event) =>
+                updateField('pipelineStage', event.target.value)
+              }
+              disabled={isSaving}
+            >
+              {PIPELINE_STAGE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

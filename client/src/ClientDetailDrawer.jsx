@@ -1,6 +1,6 @@
 import Badge from './Badge'
 import Drawer from './Drawer'
-import { getClientStatusBadge } from './utils/badges'
+import { getClientStatusBadge, getPipelineStageBadge } from './utils/badges'
 import { formatCurrency, getInitials } from './utils/format'
 
 export default function ClientDetailDrawer({ client, onClose, onEdit, onDelete }) {
@@ -46,6 +46,12 @@ export default function ClientDetailDrawer({ client, onClose, onEdit, onDelete }
           <dt className="drawer-details__label">Status</dt>
           <dd className="drawer-details__value">
             <Badge {...getClientStatusBadge(client.status)} />
+          </dd>
+        </div>
+        <div className="drawer-details__row">
+          <dt className="drawer-details__label">Pipeline stage</dt>
+          <dd className="drawer-details__value">
+            <Badge {...getPipelineStageBadge(client.pipelineStage)} />
           </dd>
         </div>
         <div className="drawer-details__row">

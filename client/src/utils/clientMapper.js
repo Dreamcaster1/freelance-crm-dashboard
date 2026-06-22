@@ -1,4 +1,5 @@
 import { formatRelativeActivity } from './format.js'
+import { PIPELINE_STAGE_VALUES } from './badges.js'
 
 export const MAX_PROJECT_VALUE_CENTS = 4294967295
 
@@ -39,6 +40,13 @@ export function validateProjectValueDollars(value) {
   return null
 }
 
+export function normalizePipelineStage(value) {
+  if (typeof value === 'string' && PIPELINE_STAGE_VALUES.includes(value)) {
+    return value
+  }
+  return null
+}
+
 export function mapClientFromApi(apiClient) {
   return {
     id: apiClient.id,
@@ -46,6 +54,7 @@ export function mapClientFromApi(apiClient) {
     contact: apiClient.contactName,
     email: apiClient.email,
     status: apiClient.status,
+    pipelineStage: normalizePipelineStage(apiClient.pipelineStage),
     projectValue: apiClient.projectValueCents / 100,
     lastActivity: formatRelativeActivity(apiClient.lastActivityAt),
     lastActivityAt: apiClient.lastActivityAt,
@@ -66,6 +75,7 @@ export function mapClientFormToApiPayload(form) {
     contact_name: form.contact.trim(),
     email: form.email.trim(),
     status: form.status,
+    pipeline_stage: form.pipelineStage,
     project_value_cents: projectValueCents ?? 0,
   }
 }
@@ -76,6 +86,7 @@ export function mapClientToForm(client) {
     contact: client.contact,
     email: client.email,
     status: client.status,
+    pipelineStage: client.pipelineStage ?? 'lead',
     projectValue: client.projectValue ? String(client.projectValue) : '',
   }
 }

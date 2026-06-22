@@ -6,6 +6,18 @@ export const CLIENT_STATUS_OPTIONS = [
   { value: 'inactive', label: 'Inactive', variant: 'neutral' },
 ]
 
+export const PIPELINE_STAGE_OPTIONS = [
+  { value: 'lead', label: 'Lead', variant: 'info' },
+  { value: 'proposal', label: 'Proposal', variant: 'warning' },
+  { value: 'active', label: 'Active', variant: 'success' },
+  { value: 'awaiting-payment', label: 'Awaiting payment', variant: 'warning' },
+  { value: 'completed', label: 'Completed', variant: 'neutral' },
+]
+
+export const PIPELINE_STAGE_VALUES = PIPELINE_STAGE_OPTIONS.map(
+  (option) => option.value,
+)
+
 export const TASK_STATUS_OPTIONS = [
   { value: 'in-progress', label: 'In Progress', variant: 'info' },
   { value: 'pending', label: 'Pending', variant: 'neutral' },
@@ -38,6 +50,10 @@ function getBadge(options, badgeOrValue, fallbackValue) {
 
 export function getClientStatusBadge(status) {
   return getBadge(CLIENT_STATUS_OPTIONS, status, 'active')
+}
+
+export function getPipelineStageBadge(pipelineStage) {
+  return getBadge(PIPELINE_STAGE_OPTIONS, pipelineStage, 'lead')
 }
 
 export function getTaskStatusBadge(status) {
