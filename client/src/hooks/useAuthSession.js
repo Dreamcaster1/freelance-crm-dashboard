@@ -51,8 +51,32 @@ export default function useAuthSession() {
   }, [applySession, clearSession])
 
   useEffect(() => {
-    bootstrap()
-  }, [bootstrap])
+    let cancelled = false
+
+    authApi
+      .getMe()
+      .then((data) => {
+        if (cancelled) return
+        applySession(data)
+      })
+      .catch((err) => {
+        if (cancelled) return
+
+        if (err instanceof ApiError && err.status === 401) {
+          clearSession()
+          return
+        }
+
+        setUser(null)
+        setWorkspace(null)
+        setStatus('error')
+        setError(err instanceof Error ? err.message : 'Unable to check session.')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [applySession, clearSession])
 
   const login = useCallback(
     async (credentials) => {

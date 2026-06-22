@@ -353,6 +353,24 @@ function UpcomingTasksPanel({ upcoming, onNavigate }) {
 
 // ── Main component ─────────────────────────────────────────────────────────
 
+function getDashboardLoadError(err) {
+  return err instanceof ApiError
+    ? err.message
+    : 'Unable to load dashboard data. Try again.'
+}
+
+async function requestDashboardData() {
+  const [clientsData, tasksData] = await Promise.all([
+    clientsApi.listClients(),
+    tasksApi.listTasks(),
+  ])
+
+  return {
+    clients: clientsData.clients,
+    tasks: tasksData.tasks,
+  }
+}
+
 export default function Dashboard({ onNavigate }) {
   const [loadStatus, setLoadStatus] = useState('loading')
   const [loadError, setLoadError] = useState(null)
@@ -364,27 +382,36 @@ export default function Dashboard({ onNavigate }) {
     setLoadError(null)
 
     try {
-      const [clientsData, tasksData] = await Promise.all([
-        clientsApi.listClients(),
-        tasksApi.listTasks(),
-      ])
-
-      setClients(clientsData.clients)
-      setTasks(tasksData.tasks)
+      const { clients: nextClients, tasks: nextTasks } = await requestDashboardData()
+      setClients(nextClients)
+      setTasks(nextTasks)
       setLoadStatus('ready')
     } catch (err) {
       setLoadStatus('error')
-      setLoadError(
-        err instanceof ApiError
-          ? err.message
-          : 'Unable to load dashboard data. Try again.',
-      )
+      setLoadError(getDashboardLoadError(err))
     }
   }, [])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    let cancelled = false
+
+    requestDashboardData()
+      .then(({ clients: nextClients, tasks: nextTasks }) => {
+        if (cancelled) return
+        setClients(nextClients)
+        setTasks(nextTasks)
+        setLoadStatus('ready')
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setLoadStatus('error')
+        setLoadError(getDashboardLoadError(err))
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const stats = useMemo(() => computeStats(clients, tasks), [clients, tasks])
   const statCards = useMemo(() => buildStatCards(stats), [stats])

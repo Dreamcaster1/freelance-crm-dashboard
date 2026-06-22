@@ -1,17 +1,10 @@
 import Badge from './Badge'
 import Drawer from './Drawer'
-import { DEFAULT_DETAILS, TASK_DETAILS } from './data/tasks'
-import { ActivityIcon } from './icons'
 import { getTaskPriorityBadge, getTaskStatusBadge } from './utils/badges'
-
-function getTaskDetails(taskId) {
-  return TASK_DETAILS[taskId] ?? DEFAULT_DETAILS
-}
 
 export default function TaskDetailDrawer({ task, onClose, onEdit, onDelete }) {
   if (!task) return null
 
-  const { activity } = getTaskDetails(task.id)
   const description =
     task.description?.trim() || 'No notes added for this task yet.'
   const isCompleted = task.status === 'completed'
@@ -83,21 +76,10 @@ export default function TaskDetailDrawer({ task, onClose, onEdit, onDelete }) {
       <section className="drawer-activity" aria-label="Related activity">
         <header className="drawer-activity__header">
           <h3 className="drawer-activity__title">Related activity</h3>
-          <span className="drawer-activity__meta">{activity.length} entries</span>
         </header>
-        <ul className="drawer-activity__list">
-          {activity.map((item) => (
-            <li key={item.id} className="drawer-activity__item">
-              <span className="drawer-activity__icon" aria-hidden="true">
-                <ActivityIcon type={item.type} />
-              </span>
-              <div className="drawer-activity__copy">
-                <span className="drawer-activity__item-title">{item.title}</span>
-                <span className="drawer-activity__item-time">{item.time}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <p className="drawer-details__value drawer-details__value--muted">
+          No activity history available yet.
+        </p>
       </section>
     </Drawer>
   )

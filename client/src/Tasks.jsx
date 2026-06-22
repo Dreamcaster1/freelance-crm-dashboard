@@ -30,6 +30,27 @@ const FILTERS = [
   { id: 'completed', label: 'Completed' },
 ]
 
+function getTasksLoadError(err) {
+  return err instanceof ApiError
+    ? err.message
+    : 'Unable to load tasks. Try again.'
+}
+
+async function requestTasksPageData() {
+  const [tasksData, clientsData] = await Promise.all([
+    tasksApi.listTasks(),
+    clientsApi.listClients(),
+  ])
+
+  return {
+    tasks: mapTasksFromApi(tasksData.tasks),
+    clients: clientsData.clients.map((client) => ({
+      id: client.id,
+      company: client.company,
+    })),
+  }
+}
+
 export default function Tasks() {
   const [tasks, setTasks] = useState([])
   const [clients, setClients] = useState([])
@@ -64,34 +85,40 @@ export default function Tasks() {
     setLoadError(null)
 
     try {
-      const [tasksData, clientsData] = await Promise.all([
-        tasksApi.listTasks(),
-        clientsApi.listClients(),
-      ])
-
-      setTasks(mapTasksFromApi(tasksData.tasks))
-      setClients(
-        clientsData.clients.map((client) => ({
-          id: client.id,
-          company: client.company,
-        })),
-      )
+      const { tasks: nextTasks, clients: nextClients } = await requestTasksPageData()
+      setTasks(nextTasks)
+      setClients(nextClients)
       setLoadStatus('ready')
     } catch (err) {
       setTasks([])
       setClients([])
       setLoadStatus('error')
-      setLoadError(
-        err instanceof ApiError
-          ? err.message
-          : 'Unable to load tasks. Try again.',
-      )
+      setLoadError(getTasksLoadError(err))
     }
   }, [])
 
   useEffect(() => {
-    fetchTasksPage()
-  }, [fetchTasksPage])
+    let cancelled = false
+
+    requestTasksPageData()
+      .then(({ tasks: nextTasks, clients: nextClients }) => {
+        if (cancelled) return
+        setTasks(nextTasks)
+        setClients(nextClients)
+        setLoadStatus('ready')
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setTasks([])
+        setClients([])
+        setLoadStatus('error')
+        setLoadError(getTasksLoadError(err))
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const filteredTasks = useMemo(() => {
     if (activeFilter === 'all') return tasks

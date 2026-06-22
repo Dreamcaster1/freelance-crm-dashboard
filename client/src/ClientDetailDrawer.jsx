@@ -1,18 +1,10 @@
 import Badge from './Badge'
 import Drawer from './Drawer'
-import { CLIENT_ACTIVITY, DEFAULT_ACTIVITY } from './data/clients'
-import { ActivityIcon } from './icons'
 import { getClientStatusBadge } from './utils/badges'
 import { formatCurrency, getInitials } from './utils/format'
 
-function getClientActivity(clientId) {
-  return CLIENT_ACTIVITY[clientId] ?? DEFAULT_ACTIVITY
-}
-
 export default function ClientDetailDrawer({ client, onClose, onEdit, onDelete }) {
   if (!client) return null
-
-  const activity = getClientActivity(client.id)
 
   return (
     <Drawer
@@ -73,21 +65,10 @@ export default function ClientDetailDrawer({ client, onClose, onEdit, onDelete }
       <section className="drawer-activity" aria-label="Recent notes and activity">
         <header className="drawer-activity__header">
           <h3 className="drawer-activity__title">Recent notes &amp; activity</h3>
-          <span className="drawer-activity__meta">{activity.length} entries</span>
         </header>
-        <ul className="drawer-activity__list">
-          {activity.map((item) => (
-            <li key={item.id} className="drawer-activity__item">
-              <span className="drawer-activity__icon" aria-hidden="true">
-                <ActivityIcon type={item.type} />
-              </span>
-              <div className="drawer-activity__copy">
-                <span className="drawer-activity__item-title">{item.title}</span>
-                <span className="drawer-activity__item-time">{item.time}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <p className="drawer-details__value drawer-details__value--muted">
+          No activity history available yet.
+        </p>
       </section>
     </Drawer>
   )

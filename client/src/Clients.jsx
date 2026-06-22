@@ -35,6 +35,17 @@ function filterClients(clients, query) {
   )
 }
 
+function getClientsLoadError(err) {
+  return err instanceof ApiError
+    ? err.message
+    : 'Unable to load clients. Try again.'
+}
+
+async function requestClientsList() {
+  const data = await clientsApi.listClients()
+  return mapClientsFromApi(data.clients)
+}
+
 export default function Clients() {
   const [clients, setClients] = useState([])
   const [loadStatus, setLoadStatus] = useState('loading')
@@ -69,23 +80,35 @@ export default function Clients() {
     setLoadError(null)
 
     try {
-      const data = await clientsApi.listClients()
-      setClients(mapClientsFromApi(data.clients))
+      setClients(await requestClientsList())
       setLoadStatus('ready')
     } catch (err) {
       setClients([])
       setLoadStatus('error')
-      setLoadError(
-        err instanceof ApiError
-          ? err.message
-          : 'Unable to load clients. Try again.',
-      )
+      setLoadError(getClientsLoadError(err))
     }
   }, [])
 
   useEffect(() => {
-    fetchClients()
-  }, [fetchClients])
+    let cancelled = false
+
+    requestClientsList()
+      .then((nextClients) => {
+        if (cancelled) return
+        setClients(nextClients)
+        setLoadStatus('ready')
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setClients([])
+        setLoadStatus('error')
+        setLoadError(getClientsLoadError(err))
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const filteredClients = useMemo(
     () => filterClients(clients, query),
