@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import AddTaskModal from './AddTaskModal'
 import * as clientsApi from './api/clients.js'
 import * as tasksApi from './api/tasks.js'
@@ -79,6 +79,8 @@ export default function Tasks() {
     openSelection: openDrawer,
     closeSelection: closeDrawer,
   } = useSelectionState()
+  const saveInFlightRef = useRef(false)
+  const deleteInFlightRef = useRef(false)
 
   const fetchTasksPage = useCallback(async () => {
     setLoadStatus('loading')
@@ -145,6 +147,8 @@ export default function Tasks() {
   }
 
   async function handleSaveTask(form) {
+    if (saveInFlightRef.current) return
+    saveInFlightRef.current = true
     setIsSaving(true)
     setSaveError(null)
 
@@ -175,13 +179,15 @@ export default function Tasks() {
           : 'Unable to save task. Try again.',
       )
     } finally {
+      saveInFlightRef.current = false
       setIsSaving(false)
     }
   }
 
   async function confirmDeleteTask() {
     if (!deletingTask) return
-
+    if (deleteInFlightRef.current) return
+    deleteInFlightRef.current = true
     setIsDeleting(true)
     setDeleteError(null)
 
@@ -200,6 +206,7 @@ export default function Tasks() {
           : 'Unable to delete task. Try again.',
       )
     } finally {
+      deleteInFlightRef.current = false
       setIsDeleting(false)
     }
   }

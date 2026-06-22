@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import AddClientModal from './AddClientModal'
 import * as clientsApi from './api/clients.js'
 import { ApiError } from './api/client.js'
@@ -74,6 +74,8 @@ export default function Clients() {
     closeSelection: closeDrawer,
   } = useSelectionState()
   const trimmedQuery = query.trim()
+  const saveInFlightRef = useRef(false)
+  const deleteInFlightRef = useRef(false)
 
   const fetchClients = useCallback(async () => {
     setLoadStatus('loading')
@@ -126,6 +128,8 @@ export default function Clients() {
   }
 
   async function handleSaveClient(form) {
+    if (saveInFlightRef.current) return
+    saveInFlightRef.current = true
     setIsSaving(true)
     setSaveError(null)
 
@@ -158,13 +162,15 @@ export default function Clients() {
           : 'Unable to save client. Try again.',
       )
     } finally {
+      saveInFlightRef.current = false
       setIsSaving(false)
     }
   }
 
   async function confirmDeleteClient() {
     if (!deletingClient) return
-
+    if (deleteInFlightRef.current) return
+    deleteInFlightRef.current = true
     setIsDeleting(true)
     setDeleteError(null)
 
@@ -185,6 +191,7 @@ export default function Clients() {
           : 'Unable to delete client. Try again.',
       )
     } finally {
+      deleteInFlightRef.current = false
       setIsDeleting(false)
     }
   }

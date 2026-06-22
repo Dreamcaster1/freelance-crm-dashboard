@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ApiError } from './api/client.js'
 
 const EMPTY_LOGIN = { email: '', password: '' }
@@ -15,6 +15,8 @@ export default function AuthPanel({ onLogin, onRegister }) {
   const [registerForm, setRegisterForm] = useState(EMPTY_REGISTER)
   const [error, setError] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const loginInFlightRef = useRef(false)
+  const registerInFlightRef = useRef(false)
 
   function switchMode(nextMode) {
     setMode(nextMode)
@@ -23,6 +25,8 @@ export default function AuthPanel({ onLogin, onRegister }) {
 
   async function handleLoginSubmit(event) {
     event.preventDefault()
+    if (loginInFlightRef.current) return
+    loginInFlightRef.current = true
     setIsSubmitting(true)
     setError(null)
 
@@ -38,12 +42,15 @@ export default function AuthPanel({ onLogin, onRegister }) {
           : 'Unable to sign in. Try again.',
       )
     } finally {
+      loginInFlightRef.current = false
       setIsSubmitting(false)
     }
   }
 
   async function handleRegisterSubmit(event) {
     event.preventDefault()
+    if (registerInFlightRef.current) return
+    registerInFlightRef.current = true
     setIsSubmitting(true)
     setError(null)
 
@@ -61,6 +68,7 @@ export default function AuthPanel({ onLogin, onRegister }) {
           : 'Unable to create account. Try again.',
       )
     } finally {
+      registerInFlightRef.current = false
       setIsSubmitting(false)
     }
   }
