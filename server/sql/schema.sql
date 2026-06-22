@@ -57,6 +57,7 @@ CREATE TABLE clients (
   contact_name VARCHAR(120) NOT NULL,
   email VARCHAR(255) NOT NULL,
   status ENUM('active', 'lead', 'on-hold', 'at-risk', 'inactive') NOT NULL DEFAULT 'active',
+  pipeline_stage ENUM('lead', 'proposal', 'active', 'awaiting-payment', 'completed') NOT NULL DEFAULT 'lead',
   project_value_cents INT UNSIGNED NOT NULL DEFAULT 0,
   last_activity_at TIMESTAMP NULL DEFAULT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -64,6 +65,7 @@ CREATE TABLE clients (
   PRIMARY KEY (id),
   KEY idx_clients_workspace_id (workspace_id),
   KEY idx_clients_status (status),
+  KEY idx_clients_pipeline_stage (pipeline_stage),
   KEY idx_clients_email (email),
   CONSTRAINT fk_clients_workspace
     FOREIGN KEY (workspace_id) REFERENCES workspaces (id) ON DELETE CASCADE

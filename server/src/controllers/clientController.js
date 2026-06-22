@@ -17,6 +17,13 @@ import {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const VALID_STATUSES = ['active', 'lead', 'on-hold', 'at-risk', 'inactive']
+const VALID_PIPELINE_STAGES = [
+  'lead',
+  'proposal',
+  'active',
+  'awaiting-payment',
+  'completed',
+]
 
 function parseClientId(rawId) {
   const clientId = Number(rawId)
@@ -29,6 +36,13 @@ function parseClientId(rawId) {
 function validateStatus(status) {
   if (!VALID_STATUSES.includes(status)) {
     return `Status must be one of: ${VALID_STATUSES.join(', ')}.`
+  }
+  return null
+}
+
+function validatePipelineStage(pipelineStage) {
+  if (!VALID_PIPELINE_STAGES.includes(pipelineStage)) {
+    return `pipeline_stage must be one of: ${VALID_PIPELINE_STAGES.join(', ')}.`
   }
   return null
 }
@@ -77,6 +91,12 @@ function validateCreateBody(body) {
     return { error: statusError }
   }
 
+  const pipelineStage = body.pipeline_stage ?? 'lead'
+  const pipelineStageError = validatePipelineStage(pipelineStage)
+  if (pipelineStageError) {
+    return { error: pipelineStageError }
+  }
+
   let projectValueCents = 0
   if (body.project_value_cents !== undefined) {
     const parsed = parseProjectValueCents(body.project_value_cents)
@@ -105,6 +125,7 @@ function validateCreateBody(body) {
       contactName,
       email,
       status,
+      pipelineStage,
       projectValueCents,
       lastActivityAt,
     },
@@ -122,6 +143,7 @@ function validatePatchBody(body) {
     'contact_name',
     'email',
     'status',
+    'pipeline_stage',
     'project_value_cents',
     'last_activity_at',
   ]
@@ -175,6 +197,14 @@ function validatePatchBody(body) {
       return { error: statusError }
     }
     fields.status = body.status
+  }
+
+  if (body.pipeline_stage !== undefined) {
+    const pipelineStageError = validatePipelineStage(body.pipeline_stage)
+    if (pipelineStageError) {
+      return { error: pipelineStageError }
+    }
+    fields.pipelineStage = body.pipeline_stage
   }
 
   if (body.project_value_cents !== undefined) {

@@ -44,16 +44,17 @@ INSERT INTO clients (
   contact_name,
   email,
   status,
+  pipeline_stage,
   project_value_cents,
   last_activity_at
 )
 VALUES
-  (1, 1, 'Relay Apps', 'Sarah Chen', 'sarah@relayapps.io', 'active', 1850000, '2026-06-08 12:00:00'),
-  (2, 1, 'Patchwork Foods', 'Marcus Webb', 'marcus@patchworkfoods.com', 'active', 1240000, '2026-06-08 09:00:00'),
-  (3, 1, 'Harbor & Co.', 'Elena Vasquez', 'elena@harborco.com', 'on-hold', 820000, '2026-06-07 18:00:00'),
-  (4, 1, 'Vaultline Security', 'James Okonkwo', 'james@vaultline.security', 'active', 960000, '2026-06-07 16:00:00'),
-  (5, 1, 'Kite & Anchor', 'Priya Nair', 'priya@kiteandanchor.com', 'active', 2200000, '2026-06-04 14:00:00'),
-  (6, 1, 'Lumen Analytics', 'David Park', 'david@lumenanalytics.com', 'lead', 0, '2026-06-03 11:00:00');
+  (1, 1, 'Relay Apps', 'Sarah Chen', 'sarah@relayapps.io', 'active', 'active', 1850000, '2026-06-08 12:00:00'),
+  (2, 1, 'Patchwork Foods', 'Marcus Webb', 'marcus@patchworkfoods.com', 'active', 'proposal', 1240000, '2026-06-08 09:00:00'),
+  (3, 1, 'Harbor & Co.', 'Elena Vasquez', 'elena@harborco.com', 'on-hold', 'active', 820000, '2026-06-07 18:00:00'),
+  (4, 1, 'Vaultline Security', 'James Okonkwo', 'james@vaultline.security', 'active', 'awaiting-payment', 960000, '2026-06-07 16:00:00'),
+  (5, 1, 'Kite & Anchor', 'Priya Nair', 'priya@kiteandanchor.com', 'active', 'completed', 2200000, '2026-06-04 14:00:00'),
+  (6, 1, 'Lumen Analytics', 'David Park', 'david@lumenanalytics.com', 'lead', 'lead', 0, '2026-06-03 11:00:00');
 
 INSERT INTO tasks (
   id,

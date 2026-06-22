@@ -7,6 +7,7 @@ const CLIENT_COLUMNS = `
   contact_name,
   email,
   status,
+  pipeline_stage,
   project_value_cents,
   last_activity_at,
   created_at,
@@ -42,6 +43,7 @@ export async function createClient(workspaceId, {
   contactName,
   email,
   status,
+  pipelineStage,
   projectValueCents,
   lastActivityAt,
 }) {
@@ -52,15 +54,17 @@ export async function createClient(workspaceId, {
       contact_name,
       email,
       status,
+      pipeline_stage,
       project_value_cents,
       last_activity_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       workspaceId,
       company,
       contactName,
       email,
       status,
+      pipelineStage,
       projectValueCents,
       lastActivityAt,
     ],
@@ -91,6 +95,11 @@ export async function updateClient(workspaceId, clientId, fields) {
   if (fields.status !== undefined) {
     assignments.push('status = ?')
     params.push(fields.status)
+  }
+
+  if (fields.pipelineStage !== undefined) {
+    assignments.push('pipeline_stage = ?')
+    params.push(fields.pipelineStage)
   }
 
   if (fields.projectValueCents !== undefined) {

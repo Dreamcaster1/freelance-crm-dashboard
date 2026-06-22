@@ -19,6 +19,7 @@ export function mapClientResponse(client) {
     contactName: client.contact_name,
     email: client.email,
     status: client.status,
+    pipelineStage: client.pipeline_stage,
     projectValueCents: client.project_value_cents,
     lastActivityAt: formatIsoDateTimeOrNull(client.last_activity_at),
     createdAt: client.created_at,
