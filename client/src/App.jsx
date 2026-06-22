@@ -204,6 +204,7 @@ function AppRoutes({ auth }) {
           <Route index element={<Dashboard />} />
           <Route path="clients" element={<Clients />} />
           <Route path="pipeline" element={<Pipeline />} />
+          <Route path="tasks/board" element={<Tasks />} />
           <Route path="tasks" element={<Tasks />} />
           <Route
             path="settings"

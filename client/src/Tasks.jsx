@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import AddTaskModal from './AddTaskModal'
 import * as clientsApi from './api/clients.js'
 import * as tasksApi from './api/tasks.js'
@@ -21,7 +22,11 @@ import {
   mapTaskFromApi,
   mapTasksFromApi,
 } from './utils/taskMapper'
-import { getTaskPriorityBadge, getTaskStatusBadge } from './utils/badges'
+import {
+  getTaskPriorityBadge,
+  getTaskStatusBadge,
+  TASK_STATUS_OPTIONS,
+} from './utils/badges'
 
 const FILTERS = [
   { id: 'all', label: 'All' },
@@ -30,10 +35,57 @@ const FILTERS = [
   { id: 'completed', label: 'Completed' },
 ]
 
+const TASK_BOARD_COLUMNS = [
+  { value: 'pending', label: 'Pending', emptyMessage: 'No pending tasks' },
+  {
+    value: 'in-progress',
+    label: 'In progress',
+    emptyMessage: 'No in-progress tasks',
+  },
+  { value: 'completed', label: 'Completed', emptyMessage: 'No completed tasks' },
+]
+
+const VALID_TASK_STATUSES = new Set(
+  TASK_BOARD_COLUMNS.map((column) => column.value),
+)
+
 function getTasksLoadError(err) {
   return err instanceof ApiError
     ? err.message
     : 'Unable to load tasks. Try again.'
+}
+
+function getTaskMoveError(err) {
+  return err instanceof ApiError
+    ? err.message
+    : 'Unable to update task status. Try again.'
+}
+
+function getDisplayStatus(task) {
+  return VALID_TASK_STATUSES.has(task.status) ? task.status : 'pending'
+}
+
+function groupTasksByStatus(tasks) {
+  const groups = Object.fromEntries(
+    TASK_BOARD_COLUMNS.map((column) => [column.value, []]),
+  )
+
+  for (const task of tasks) {
+    groups[getDisplayStatus(task)].push(task)
+  }
+
+  return groups
+}
+
+function getTaskClientLabel(task) {
+  return task.client === '—' ? 'Unassigned' : task.client
+}
+
+function getDescriptionPreview(description, maxLength = 72) {
+  const trimmed = description?.trim()
+  if (!trimmed) return null
+  if (trimmed.length <= maxLength) return trimmed
+  return `${trimmed.slice(0, maxLength).trimEnd()}…`
 }
 
 async function requestTasksPageData() {
@@ -51,7 +103,235 @@ async function requestTasksPageData() {
   }
 }
 
+function TaskBoardCard({
+  task,
+  isMoving,
+  isDragging,
+  desktopDragEnabled,
+  onOpenTask,
+  onEditTask,
+  onDeleteTask,
+  onDragStart,
+  onDragEnd,
+  onStatusChange,
+}) {
+  const displayStatus = getDisplayStatus(task)
+  const selectId = `task-board-status-${task.id}`
+  const canDrag = desktopDragEnabled && !isMoving
+  const descriptionPreview = getDescriptionPreview(task.description)
+  const isCompleted = displayStatus === 'completed'
+
+  const cardClassName = [
+    'task-board-card',
+    canDrag ? 'task-board-card--draggable' : '',
+    isDragging ? 'task-board-card--dragging' : '',
+    isMoving ? 'task-board-card--moving' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  return (
+    <article
+      className={cardClassName}
+      draggable={canDrag}
+      onDragStart={canDrag ? onDragStart : undefined}
+      onDragEnd={canDrag ? onDragEnd : undefined}
+      aria-grabbed={isDragging ? true : undefined}
+    >
+      <div
+        className="task-board-card__body"
+        role="button"
+        tabIndex={0}
+        title={
+          canDrag
+            ? 'Drag to another column, or use the status select below'
+            : undefined
+        }
+        onClick={() => onOpenTask(task)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            onOpenTask(task)
+          }
+        }}
+      >
+        <h3
+          className={`task-board-card__title${
+            isCompleted ? ' task-board-card__title--completed' : ''
+          }`}
+        >
+          {task.name}
+        </h3>
+        <p className="task-board-card__client">{getTaskClientLabel(task)}</p>
+        <div className="task-board-card__meta">
+          <Badge {...getTaskPriorityBadge(task.priority)} />
+          <span className="task-board-card__due">{task.dueDate}</span>
+        </div>
+        {descriptionPreview ? (
+          <p className="task-board-card__description">{descriptionPreview}</p>
+        ) : null}
+      </div>
+
+      <footer
+        className="task-board-card__footer"
+        onDragStart={(event) => event.preventDefault()}
+      >
+        <label className="task-board-card__status-label" htmlFor={selectId}>
+          Status
+        </label>
+        <select
+          id={selectId}
+          className="task-board-card__status-select"
+          value={displayStatus}
+          onChange={(event) => onStatusChange(task.id, event.target.value)}
+          disabled={isMoving}
+          draggable={false}
+          aria-label={`Change status for ${task.name}`}
+        >
+          {TASK_STATUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <div className="task-board-card__actions">
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            onClick={(event) => {
+              event.stopPropagation()
+              onEditTask(task)
+            }}
+            disabled={isMoving}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            className="btn btn--danger btn--sm"
+            onClick={(event) => {
+              event.stopPropagation()
+              onDeleteTask(task)
+            }}
+            disabled={isMoving}
+          >
+            Delete
+          </button>
+        </div>
+      </footer>
+    </article>
+  )
+}
+
+function TaskBoardColumn({
+  statusId,
+  label,
+  emptyMessage,
+  tasks,
+  movingTaskId,
+  draggedTaskId,
+  dragOverStatus,
+  draggedTaskStatus,
+  desktopDragEnabled,
+  isDragActive,
+  onOpenTask,
+  onEditTask,
+  onDeleteTask,
+  onStatusChange,
+  onCardDragStart,
+  onCardDragEnd,
+  onColumnDragEnter,
+  onColumnDragOver,
+  onColumnDragLeave,
+  onColumnDrop,
+}) {
+  const isDropTarget =
+    desktopDragEnabled &&
+    draggedTaskId != null &&
+    dragOverStatus === statusId &&
+    draggedTaskStatus !== statusId
+  const isCurrentStatusDrag =
+    desktopDragEnabled &&
+    draggedTaskId != null &&
+    draggedTaskStatus === statusId
+
+  const columnClassName = [
+    'task-board-column',
+    `task-board-column--${statusId}`,
+    isDragActive ? 'task-board-column--drag-active' : '',
+    isDropTarget ? 'task-board-column--drop-target' : '',
+    isCurrentStatusDrag ? 'task-board-column--drop-current' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  return (
+    <section
+      className={columnClassName}
+      aria-label={`${label} tasks`}
+      onDragEnter={
+        desktopDragEnabled
+          ? (event) => onColumnDragEnter(statusId, event)
+          : undefined
+      }
+      onDragOver={
+        desktopDragEnabled
+          ? (event) => onColumnDragOver(statusId, event)
+          : undefined
+      }
+      onDragLeave={
+        desktopDragEnabled
+          ? (event) => onColumnDragLeave(statusId, event)
+          : undefined
+      }
+      onDrop={
+        desktopDragEnabled
+          ? (event) => onColumnDrop(statusId, event)
+          : undefined
+      }
+    >
+      <header className="task-board-column__header">
+        <div className="task-board-column__title-group">
+          <span className="task-board-column__marker" aria-hidden="true" />
+          <h2 className="task-board-column__title">{label}</h2>
+        </div>
+        <span className="task-board-column__count">{tasks.length}</span>
+      </header>
+
+      <div className="task-board-column__body">
+        {tasks.length > 0 ? (
+          <ul className="task-board-column__list">
+            {tasks.map((task) => (
+              <li key={task.id}>
+                <TaskBoardCard
+                  task={task}
+                  isMoving={movingTaskId === task.id}
+                  isDragging={draggedTaskId === task.id}
+                  desktopDragEnabled={desktopDragEnabled}
+                  onOpenTask={onOpenTask}
+                  onEditTask={onEditTask}
+                  onDeleteTask={onDeleteTask}
+                  onDragStart={(event) => onCardDragStart(task.id, event)}
+                  onDragEnd={onCardDragEnd}
+                  onStatusChange={onStatusChange}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="task-board-column__empty">{emptyMessage}</p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+const TASKS_BOARD_PATH = '/tasks/board'
+
 export default function Tasks() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const activeView = location.pathname === TASKS_BOARD_PATH ? 'board' : 'table'
   const [tasks, setTasks] = useState([])
   const [clients, setClients] = useState([])
   const [loadStatus, setLoadStatus] = useState('loading')
@@ -61,6 +341,11 @@ export default function Tasks() {
   const [saveError, setSaveError] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
+  const [moveError, setMoveError] = useState(null)
+  const [movingTaskId, setMovingTaskId] = useState(null)
+  const [draggedTaskId, setDraggedTaskId] = useState(null)
+  const [dragOverStatus, setDragOverStatus] = useState(null)
+  const [desktopDragEnabled, setDesktopDragEnabled] = useState(false)
   const {
     isOpen: isModalOpen,
     editingItem: editingTask,
@@ -81,6 +366,12 @@ export default function Tasks() {
   } = useSelectionState()
   const saveInFlightRef = useRef(false)
   const deleteInFlightRef = useRef(false)
+  const moveInFlightRef = useRef(new Set())
+  const columnDragDepthRef = useRef(new Map())
+
+  const resetColumnDragDepths = useCallback(() => {
+    columnDragDepthRef.current.clear()
+  }, [])
 
   const fetchTasksPage = useCallback(async () => {
     setLoadStatus('loading')
@@ -122,6 +413,15 @@ export default function Tasks() {
     }
   }, [])
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(hover: hover) and (pointer: fine)')
+    const syncDesktopDrag = () => setDesktopDragEnabled(mediaQuery.matches)
+
+    syncDesktopDrag()
+    mediaQuery.addEventListener('change', syncDesktopDrag)
+    return () => mediaQuery.removeEventListener('change', syncDesktopDrag)
+  }, [])
+
   const filteredTasks = useMemo(() => {
     if (activeFilter === 'all') return tasks
     return tasks.filter((task) => task.status === activeFilter)
@@ -135,6 +435,176 @@ export default function Tasks() {
       completed: tasks.filter((task) => task.status === 'completed').length,
     }
   }, [tasks])
+
+  const groupedBoardTasks = useMemo(() => groupTasksByStatus(tasks), [tasks])
+
+  const handleStatusChange = useCallback(
+    async (taskId, nextStatus) => {
+      if (moveInFlightRef.current.has(taskId)) return
+
+      const previousTask = tasks.find((task) => task.id === taskId)
+      if (!previousTask || getDisplayStatus(previousTask) === nextStatus) return
+
+      moveInFlightRef.current.add(taskId)
+      setMovingTaskId(taskId)
+      setMoveError(null)
+
+      const optimisticTask = { ...previousTask, status: nextStatus }
+
+      setTasks((current) =>
+        current.map((task) => (task.id === taskId ? optimisticTask : task)),
+      )
+      setSelectedTask((current) =>
+        current?.id === taskId ? optimisticTask : current,
+      )
+
+      try {
+        const data = await tasksApi.updateTask(taskId, { status: nextStatus })
+        const savedTask = mapTaskFromApi(data.task)
+
+        setTasks((current) =>
+          current.map((task) => (task.id === taskId ? savedTask : task)),
+        )
+        setSelectedTask((current) =>
+          current?.id === taskId ? savedTask : current,
+        )
+      } catch (err) {
+        setTasks((current) =>
+          current.map((task) => (task.id === taskId ? previousTask : task)),
+        )
+        setSelectedTask((current) =>
+          current?.id === taskId ? previousTask : current,
+        )
+        setMoveError(getTaskMoveError(err))
+      } finally {
+        moveInFlightRef.current.delete(taskId)
+        setMovingTaskId(null)
+      }
+    },
+    [tasks, setSelectedTask],
+  )
+
+  const clearDragState = useCallback(() => {
+    resetColumnDragDepths()
+    setDraggedTaskId(null)
+    setDragOverStatus(null)
+  }, [resetColumnDragDepths])
+
+  const draggedTask = useMemo(
+    () =>
+      draggedTaskId == null
+        ? null
+        : tasks.find((task) => task.id === draggedTaskId) ?? null,
+    [tasks, draggedTaskId],
+  )
+  const draggedTaskStatus = draggedTask ? getDisplayStatus(draggedTask) : null
+
+  const handleCardDragStart = useCallback(
+    (taskId, event) => {
+      if (
+        event.target.closest(
+          '.task-board-card__footer, select, button, label',
+        )
+      ) {
+        event.preventDefault()
+        return
+      }
+
+      if (moveInFlightRef.current.has(taskId)) {
+        event.preventDefault()
+        return
+      }
+
+      setDraggedTaskId(taskId)
+      setDragOverStatus(null)
+      resetColumnDragDepths()
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('text/plain', String(taskId))
+    },
+    [resetColumnDragDepths],
+  )
+
+  const handleCardDragEnd = useCallback(() => {
+    clearDragState()
+  }, [clearDragState])
+
+  const handleColumnDragEnter = useCallback(
+    (statusId, event) => {
+      if (draggedTaskId == null) return
+      if (moveInFlightRef.current.has(draggedTaskId)) return
+
+      const { currentTarget, relatedTarget } = event
+      if (
+        relatedTarget instanceof Node &&
+        currentTarget.contains(relatedTarget)
+      ) {
+        return
+      }
+
+      const depths = columnDragDepthRef.current
+      depths.set(statusId, (depths.get(statusId) ?? 0) + 1)
+    },
+    [draggedTaskId],
+  )
+
+  const handleColumnDragOver = useCallback(
+    (statusId, event) => {
+      if (draggedTaskId == null) return
+      if (moveInFlightRef.current.has(draggedTaskId)) return
+
+      if (draggedTaskStatus === statusId) {
+        event.dataTransfer.dropEffect = 'none'
+        setDragOverStatus(null)
+        return
+      }
+
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'move'
+      setDragOverStatus(statusId)
+    },
+    [draggedTaskId, draggedTaskStatus],
+  )
+
+  const handleColumnDragLeave = useCallback((statusId, event) => {
+    const { currentTarget, relatedTarget } = event
+    if (
+      relatedTarget instanceof Node &&
+      currentTarget.contains(relatedTarget)
+    ) {
+      return
+    }
+
+    const depths = columnDragDepthRef.current
+    const nextDepth = (depths.get(statusId) ?? 0) - 1
+
+    if (nextDepth <= 0) {
+      depths.delete(statusId)
+      setDragOverStatus((current) => (current === statusId ? null : current))
+      return
+    }
+
+    depths.set(statusId, nextDepth)
+  }, [])
+
+  const handleColumnDrop = useCallback(
+    (statusId, event) => {
+      event.preventDefault()
+
+      const rawTaskId = draggedTaskId ?? event.dataTransfer.getData('text/plain')
+      const taskId = Number(rawTaskId)
+      const droppedTask = tasks.find((task) => task.id === taskId)
+      const currentStatus = droppedTask ? getDisplayStatus(droppedTask) : null
+
+      clearDragState()
+
+      if (!Number.isFinite(taskId) || taskId <= 0) return
+      if (moveInFlightRef.current.has(taskId)) return
+      if (currentStatus === statusId) return
+
+      handleStatusChange(taskId, statusId)
+    },
+    [clearDragState, tasks, draggedTaskId, handleStatusChange],
+  )
 
   function handleOpenAddModal() {
     setSaveError(null)
@@ -238,22 +708,52 @@ export default function Tasks() {
     )
   }
 
+  const isDragActive = desktopDragEnabled && draggedTaskId != null
+
   return (
     <div className="tasks">
       <div className="tasks-toolbar">
-        <div className="tasks-filters" role="group" aria-label="Filter by status">
-          {FILTERS.map((filter) => (
+        <div className="tasks-toolbar__start">
+          {activeView === 'table' ? (
+            <div className="tasks-filters" role="group" aria-label="Filter by status">
+              {FILTERS.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  className={`tasks-filter${activeFilter === filter.id ? ' tasks-filter--active' : ''}`}
+                  onClick={() => setActiveFilter(filter.id)}
+                  aria-pressed={activeFilter === filter.id}
+                >
+                  {filter.label}
+                  <span className="tasks-filter__count">
+                    {filterCounts[filter.id]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div className="tasks-view-toggle" role="group" aria-label="Task view">
             <button
-              key={filter.id}
               type="button"
-              className={`tasks-filter${activeFilter === filter.id ? ' tasks-filter--active' : ''}`}
-              onClick={() => setActiveFilter(filter.id)}
-              aria-pressed={activeFilter === filter.id}
+              className={`tasks-view-toggle__btn${
+                activeView === 'table' ? ' tasks-view-toggle__btn--active' : ''
+              }`}
+              onClick={() => navigate('/tasks')}
+              aria-pressed={activeView === 'table'}
             >
-              {filter.label}
-              <span className="tasks-filter__count">{filterCounts[filter.id]}</span>
+              Table
             </button>
-          ))}
+            <button
+              type="button"
+              className={`tasks-view-toggle__btn${
+                activeView === 'board' ? ' tasks-view-toggle__btn--active' : ''
+              }`}
+              onClick={() => navigate(TASKS_BOARD_PATH)}
+              aria-pressed={activeView === 'board'}
+            >
+              Board
+            </button>
+          </div>
         </div>
         <button
           type="button"
@@ -265,74 +765,130 @@ export default function Tasks() {
         </button>
       </div>
 
-      <TableCard
-        cardClassName="tasks-table-card"
-        footerClassName="tasks-table__footer"
-        footerText={`Showing ${filteredTasks.length} of ${tasks.length} tasks`}
-      >
-        <table className="tasks-table">
-          <thead>
-            <tr>
-              <th scope="col">Task</th>
-              <th scope="col">Client</th>
-              <th scope="col">Status</th>
-              <th scope="col">Priority</th>
-              <th scope="col" className="tasks-table__align-right">
-                Due Date
-              </th>
-              <th scope="col" className="tasks-table__align-right">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTasks.length > 0 ? (
-              filteredTasks.map((task) => (
-                <SelectableTableRow
-                  key={task.id}
-                  isSelected={selectedTask?.id === task.id}
-                  rowClassName="tasks-table__row"
-                  selectedClassName="tasks-table__row--selected"
-                  ariaLabel={`View details for ${task.name}`}
-                  onOpen={() => openDrawer(task)}
-                >
-                  <td>
-                    <div className="task-name">
-                      <span
-                        className={`task-name__check${task.status === 'completed' ? ' task-name__check--done' : ''}`}
-                        aria-hidden="true"
+      {activeView === 'table' ? (
+        <TableCard
+          cardClassName="tasks-table-card"
+          footerClassName="tasks-table__footer"
+          footerText={`Showing ${filteredTasks.length} of ${tasks.length} tasks`}
+        >
+          <table className="tasks-table">
+            <thead>
+              <tr>
+                <th scope="col">Task</th>
+                <th scope="col">Client</th>
+                <th scope="col">Status</th>
+                <th scope="col">Priority</th>
+                <th scope="col" className="tasks-table__align-right">
+                  Due Date
+                </th>
+                <th scope="col" className="tasks-table__align-right">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTasks.length > 0 ? (
+                filteredTasks.map((task) => (
+                  <SelectableTableRow
+                    key={task.id}
+                    isSelected={selectedTask?.id === task.id}
+                    rowClassName="tasks-table__row"
+                    selectedClassName="tasks-table__row--selected"
+                    ariaLabel={`View details for ${task.name}`}
+                    onOpen={() => openDrawer(task)}
+                  >
+                    <td>
+                      <div className="task-name">
+                        <span
+                          className={`task-name__check${task.status === 'completed' ? ' task-name__check--done' : ''}`}
+                          aria-hidden="true"
+                        />
+                        <span className="task-name__label">{task.name}</span>
+                      </div>
+                    </td>
+                    <td className="tasks-table__client">{task.client}</td>
+                    <td>
+                      <Badge {...getTaskStatusBadge(task.status)} />
+                    </td>
+                    <td>
+                      <Badge {...getTaskPriorityBadge(task.priority)} />
+                    </td>
+                    <td className="tasks-table__align-right tasks-table__due">
+                      {task.dueDate}
+                    </td>
+                    <td className="tasks-table__align-right">
+                      <TableActions
+                        onEdit={() => handleOpenEditModal(task)}
+                        onDelete={() => openDeleteModal(task)}
                       />
-                      <span className="task-name__label">{task.name}</span>
-                    </div>
-                  </td>
-                  <td className="tasks-table__client">{task.client}</td>
-                  <td>
-                    <Badge {...getTaskStatusBadge(task.status)} />
-                  </td>
-                  <td>
-                    <Badge {...getTaskPriorityBadge(task.priority)} />
-                  </td>
-                  <td className="tasks-table__align-right tasks-table__due">
-                    {task.dueDate}
-                  </td>
-                  <td className="tasks-table__align-right">
-                    <TableActions
-                      onEdit={() => handleOpenEditModal(task)}
-                      onDelete={() => openDeleteModal(task)}
-                    />
-                  </td>
-                </SelectableTableRow>
-              ))
-            ) : (
-              <TableEmptyState colSpan={6} className="tasks-table__empty">
-                {tasks.length === 0
-                  ? 'No tasks yet. Add your first task to get started.'
-                  : 'No tasks match this filter.'}
-              </TableEmptyState>
-            )}
-          </tbody>
-        </table>
-      </TableCard>
+                    </td>
+                  </SelectableTableRow>
+                ))
+              ) : (
+                <TableEmptyState colSpan={6} className="tasks-table__empty">
+                  {tasks.length === 0
+                    ? 'No tasks yet. Add your first task to get started.'
+                    : 'No tasks match this filter.'}
+                </TableEmptyState>
+              )}
+            </tbody>
+          </table>
+        </TableCard>
+      ) : (
+        <>
+          {moveError ? (
+            <p className="tasks-board__move-error" role="alert">
+              {moveError}
+            </p>
+          ) : null}
+
+          {tasks.length === 0 ? (
+            <p className="tasks-board__empty-account">
+              No tasks yet. Add your first task to get started.
+            </p>
+          ) : null}
+
+          <div
+            className={[
+              'tasks-board',
+              isDragActive ? 'tasks-board--drag-active' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
+            {TASK_BOARD_COLUMNS.map((column) => (
+              <TaskBoardColumn
+                key={column.value}
+                statusId={column.value}
+                label={column.label}
+                emptyMessage={column.emptyMessage}
+                tasks={groupedBoardTasks[column.value]}
+                movingTaskId={movingTaskId}
+                draggedTaskId={draggedTaskId}
+                dragOverStatus={dragOverStatus}
+                draggedTaskStatus={draggedTaskStatus}
+                desktopDragEnabled={desktopDragEnabled}
+                isDragActive={isDragActive}
+                onOpenTask={openDrawer}
+                onEditTask={handleOpenEditModal}
+                onDeleteTask={openDeleteModal}
+                onStatusChange={handleStatusChange}
+                onCardDragStart={handleCardDragStart}
+                onCardDragEnd={handleCardDragEnd}
+                onColumnDragEnter={handleColumnDragEnter}
+                onColumnDragOver={handleColumnDragOver}
+                onColumnDragLeave={handleColumnDragLeave}
+                onColumnDrop={handleColumnDrop}
+              />
+            ))}
+          </div>
+
+          <footer className="tasks-board__footer">
+            Showing {tasks.length} task{tasks.length === 1 ? '' : 's'} across 3
+            columns
+          </footer>
+        </>
+      )}
 
       <AddTaskModal
         isOpen={isModalOpen}
