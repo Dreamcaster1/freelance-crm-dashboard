@@ -9,9 +9,9 @@ export function getInitials(company) {
 
 export function formatCurrency(amount) {
   if (amount === 0) return '—'
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GB', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'GBP',
     maximumFractionDigits: 0,
   }).format(amount)
 }
@@ -81,15 +81,4 @@ export function futureDateInt(daysAhead) {
   const d = new Date()
   d.setDate(d.getDate() + daysAhead)
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()
-}
-
-export function parseDueDateToInput(dueDate) {
-  if (!dueDate || dueDate === '—') return ''
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return dueDate
-
-  const parsed = new Date(dueDate)
-  if (Number.isNaN(parsed.getTime())) return ''
-
-  return parsed.toISOString().slice(0, 10)
 }

@@ -15,18 +15,18 @@ export const NAV_ITEMS = [
 export const PAGES = {
   dashboard: {
     title: 'Overview',
-    description: 'Pipeline, billable work, and client movement across your studio.',
+    description: 'Client accounts, open tasks, and project value across your studio.',
   },
   clients: {
     title: 'Clients',
-    description: 'Retainers, launches, and accounts you\u2019re building for right now.',
+    description: 'Manage client accounts, contacts, and project details.',
   },
   tasks: {
     title: 'Tasks',
-    description: 'Sprint work, handoffs, and ship dates across active builds.',
+    description: 'Track deliverables, priorities, and due dates across your workspace.',
   },
   settings: {
     title: 'Settings',
-    description: 'Your profile, studio defaults, alerts, and account security.',
+    description: 'Your profile, workspace preferences, and account security.',
   },
 }

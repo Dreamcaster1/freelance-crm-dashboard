@@ -36,20 +36,12 @@ function getBadge(options, badgeOrValue, fallbackValue) {
   }
 }
 
-export function getClientStatusValue(status) {
-  return getOptionValue(CLIENT_STATUS_OPTIONS, status, 'active')
-}
-
 export function getClientStatusBadge(status) {
   return getBadge(CLIENT_STATUS_OPTIONS, status, 'active')
 }
 
 export function getTaskStatusBadge(status) {
   return getBadge(TASK_STATUS_OPTIONS, status, 'pending')
-}
-
-export function getTaskPriorityValue(priority) {
-  return getOptionValue(TASK_PRIORITY_OPTIONS, priority, 'medium')
 }
 
 export function getTaskPriorityBadge(priority) {
