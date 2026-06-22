@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import * as authApi from '../api/auth.js'
-import { ApiError } from '../api/client.js'
+import { ApiError, setUnauthorizedHandler } from '../api/client.js'
 
 export default function useAuthSession() {
   const [status, setStatus] = useState('loading')
@@ -21,6 +21,14 @@ export default function useAuthSession() {
     setStatus('unauthenticated')
     setError(null)
   }, [])
+
+  // Register clearSession as the global 401 handler so any protected API
+  // request that receives Unauthorized automatically returns to the auth panel.
+  // Deregister on unmount so a stale reference is never called.
+  useEffect(() => {
+    setUnauthorizedHandler(clearSession)
+    return () => setUnauthorizedHandler(null)
+  }, [clearSession])
 
   const bootstrap = useCallback(async () => {
     setStatus('loading')

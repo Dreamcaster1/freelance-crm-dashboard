@@ -5,6 +5,11 @@ if (!process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET environment variable is required')
 }
 
+// Single source of truth for how long a session lives.
+// Both the cookie maxAge and the MySQL store expiration use this value
+// so they cannot silently drift apart.
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+
 const MySQLStore = expressMysqlSession(session)
 
 const sessionStore = new MySQLStore({
@@ -15,7 +20,7 @@ const sessionStore = new MySQLStore({
   database: process.env.DB_NAME,
   clearExpired: true,
   checkExpirationInterval: 900000,
-  expiration: 86400000,
+  expiration: SESSION_TTL_MS,
   createDatabaseTable: true,
   schema: {
     tableName: 'sessions',
@@ -32,6 +37,6 @@ export default session({
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 1000 * 60 * 60 * 24 * 7,
+    maxAge: SESSION_TTL_MS,
   },
 })

@@ -10,6 +10,17 @@ export class ApiError extends Error {
   }
 }
 
+let unauthorizedHandler = null
+
+/**
+ * Register a callback that fires whenever any API response returns 401.
+ * Pass null to deregister. Called by useAuthSession to clear auth state
+ * globally without wiring 401 checks into every page component.
+ */
+export function setUnauthorizedHandler(fn) {
+  unauthorizedHandler = fn
+}
+
 export async function apiRequest(path, { method = 'GET', body, headers = {} } = {}) {
   const fetchOptions = {
     method,
@@ -40,6 +51,9 @@ export async function apiRequest(path, { method = 'GET', body, headers = {} } = 
   }
 
   if (!response.ok) {
+    if (response.status === 401 && unauthorizedHandler !== null) {
+      unauthorizedHandler()
+    }
     const message =
       data?.error ?? `Request failed with status ${response.status}.`
     throw new ApiError(message, { status: response.status, body: data })
