@@ -121,6 +121,9 @@
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .workspace-switcher__chevron {
@@ -243,6 +246,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
   min-width: 0;
 }
 
@@ -251,6 +255,9 @@
   font-weight: 500;
   letter-spacing: -0.015em;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar-user__role {

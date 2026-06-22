@@ -115,7 +115,8 @@
   .nav-item {
     flex: 0 0 auto;
     width: auto;
-    padding: 8px 12px;
+    min-height: 40px;
+    padding: 10px 12px;
     white-space: nowrap;
     box-shadow: none;
   }
@@ -190,6 +191,16 @@
 
   .drawer__footer {
     padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .drawer__close {
+    width: 36px;
+    height: 36px;
+  }
+
+  .table-actions .btn--sm {
+    min-height: 36px;
+    padding: 6px 10px;
   }
 
   .dashboard-panel__header {
