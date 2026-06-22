@@ -4,6 +4,7 @@ import {
   findPrimaryWorkspaceForUser,
   findUserByEmail,
   findUserById,
+  findWorkspaceMembershipForUser,
   findWorkspaceById,
   findWorkspaceBySlug,
 } from '../models/userModel.js'
@@ -37,9 +38,36 @@ function setSessionUser(req, userId, workspaceId) {
   req.session.workspaceId = workspaceId
 }
 
-async function buildAuthResponse(userId, workspaceId, workspaceRole = null) {
-  const user = await findUserById(userId)
-  const workspace = await findWorkspaceById(workspaceId)
+function clearSessionCookie(res) {
+  res.clearCookie('clientflow.sid')
+}
+
+async function destroySession(req) {
+  if (!req.session) return
+
+  const destroyError = await new Promise((resolve) => {
+    req.session.destroy((error) => resolve(error ?? null))
+  })
+
+  if (!destroyError) return
+
+  // Fallback invalidation so stale sessions cannot continue to pass requireAuth.
+  delete req.session.userId
+  delete req.session.workspaceId
+  await new Promise((resolve) => {
+    req.session.save(() => resolve())
+  })
+}
+
+async function invalidateStaleSession(req, res) {
+  await destroySession(req)
+  clearSessionCookie(res)
+}
+
+function buildAuthResponse({ user, workspace, workspaceRole = null }) {
+  if (!user || !workspace) {
+    throw new Error('Auth response requires user and workspace.')
+  }
 
   return {
     ok: true,
@@ -110,12 +138,23 @@ export async function register(req, res) {
 
     setSessionUser(req, userId, workspaceId)
 
-    const membership = await findPrimaryWorkspaceForUser(userId)
-    const response = await buildAuthResponse(
-      userId,
-      workspaceId,
-      membership?.id === workspaceId ? membership.role : null,
-    )
+    const [savedUser, workspaceMembership] = await Promise.all([
+      findUserById(userId),
+      findPrimaryWorkspaceForUser(userId),
+    ])
+
+    if (!savedUser || !workspaceMembership || workspaceMembership.id !== workspaceId) {
+      return res.status(500).json({
+        ok: false,
+        error: 'Unable to create account.',
+      })
+    }
+
+    const response = buildAuthResponse({
+      user: savedUser,
+      workspace: workspaceMembership,
+      workspaceRole: workspaceMembership.role,
+    })
     return res.status(201).json(response)
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -172,7 +211,11 @@ export async function login(req, res) {
 
   setSessionUser(req, user.id, workspace.id)
 
-  const response = await buildAuthResponse(user.id, workspace.id, workspace.role)
+  const response = buildAuthResponse({
+    user,
+    workspace,
+    workspaceRole: workspace.role,
+  })
   return res.json(response)
 }
 
@@ -189,17 +232,31 @@ export function logout(req, res) {
       })
     }
 
-    res.clearCookie('clientflow.sid')
+    clearSessionCookie(res)
     return res.json({ ok: true })
   })
 }
 
 export async function me(req, res) {
-  const workspace = await findPrimaryWorkspaceForUser(req.session.userId)
-  const response = await buildAuthResponse(
-    req.session.userId,
-    req.session.workspaceId,
-    workspace?.id === req.session.workspaceId ? workspace.role : null,
-  )
+  const { userId, workspaceId } = req.session
+  const [user, workspace, membership] = await Promise.all([
+    findUserById(userId),
+    findWorkspaceById(workspaceId),
+    findWorkspaceMembershipForUser(userId, workspaceId),
+  ])
+
+  if (!user || !workspace || !membership) {
+    await invalidateStaleSession(req, res)
+    return res.status(401).json({
+      ok: false,
+      error: 'Unauthorized',
+    })
+  }
+
+  const response = buildAuthResponse({
+    user,
+    workspace,
+    workspaceRole: membership.role,
+  })
   return res.json(response)
 }

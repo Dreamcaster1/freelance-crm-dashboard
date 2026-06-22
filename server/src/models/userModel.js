@@ -45,6 +45,17 @@ export async function findPrimaryWorkspaceForUser(userId) {
   return rows[0] ?? null
 }
 
+export async function findWorkspaceMembershipForUser(userId, workspaceId) {
+  const [rows] = await pool.query(
+    `SELECT wm.role
+     FROM workspace_members wm
+     WHERE wm.user_id = ? AND wm.workspace_id = ?
+     LIMIT 1`,
+    [userId, workspaceId],
+  )
+  return rows[0] ?? null
+}
+
 export async function createUserWithWorkspace({
   name,
   email,
