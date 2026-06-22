@@ -1,35 +1,37 @@
 import { formatRelativeActivity } from './format.js'
 
 export const MAX_PROJECT_VALUE_CENTS = 4294967295
-export const MAX_PROJECT_VALUE_DOLLARS = MAX_PROJECT_VALUE_CENTS / 100
 
-function parseProjectValueDollars(value) {
+// Non-negative decimal pounds: digits with optional .XX (no leading-dot shorthand).
+const PROJECT_VALUE_PATTERN = /^\d+(\.\d{1,2})?$/
+
+function parseValidatedProjectValueDollars(value) {
   if (!value?.trim()) return 0
 
-  const normalized = value.replace(/[^0-9.]/g, '')
-  const dollars = Number(normalized)
+  const trimmed = value.trim()
+  if (!PROJECT_VALUE_PATTERN.test(trimmed)) return null
 
+  const dollars = Number(trimmed)
   if (!Number.isFinite(dollars) || dollars < 0) return null
+
   return dollars
 }
 
 export function validateProjectValueDollars(value) {
   if (!value?.trim()) return null
 
-  const normalized = value.replace(/[^0-9.]/g, '')
+  const trimmed = value.trim()
 
-  if (!normalized || !/^\d+(\.\d{1,2})?$/.test(normalized)) {
+  if (!PROJECT_VALUE_PATTERN.test(trimmed)) {
     return 'Project value must be a valid amount.'
   }
 
-  const dollars = Number(normalized)
-
+  const dollars = Number(trimmed)
   if (!Number.isFinite(dollars) || dollars < 0) {
     return 'Project value must be a valid amount.'
   }
 
   const cents = Math.round(dollars * 100)
-
   if (cents > MAX_PROJECT_VALUE_CENTS) {
     return 'Project value is too large.'
   }
@@ -55,7 +57,7 @@ export function mapClientsFromApi(apiClients) {
 }
 
 export function mapClientFormToApiPayload(form) {
-  const dollars = parseProjectValueDollars(form.projectValue)
+  const dollars = parseValidatedProjectValueDollars(form.projectValue)
   const projectValueCents =
     dollars === null ? null : Math.round(dollars * 100)
 
