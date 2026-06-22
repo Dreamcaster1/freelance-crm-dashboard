@@ -12,6 +12,7 @@ import {
 import AuthPanel from './AuthPanel'
 import Clients from './Clients'
 import Dashboard from './Dashboard'
+import Pipeline from './Pipeline'
 import Settings from './Settings'
 import Tasks from './Tasks'
 import { ApiError } from './api/client.js'
@@ -202,6 +203,7 @@ function AppRoutes({ auth }) {
         >
           <Route index element={<Dashboard />} />
           <Route path="clients" element={<Clients />} />
+          <Route path="pipeline" element={<Pipeline />} />
           <Route path="tasks" element={<Tasks />} />
           <Route path="settings" element={<Settings />} />
         </Route>

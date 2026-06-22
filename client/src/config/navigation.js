@@ -1,4 +1,5 @@
 import {
+  IconBriefcase,
   IconCheckSquare,
   IconLayoutDashboard,
   IconSettings,
@@ -8,6 +9,7 @@ import {
 export const NAV_ITEMS = [
   { id: 'dashboard', path: '/', label: 'Overview', icon: IconLayoutDashboard },
   { id: 'clients', path: '/clients', label: 'Clients', icon: IconUsers },
+  { id: 'pipeline', path: '/pipeline', label: 'Pipeline', icon: IconBriefcase },
   { id: 'tasks', path: '/tasks', label: 'Tasks', icon: IconCheckSquare },
   { id: 'settings', path: '/settings', label: 'Settings', icon: IconSettings },
 ]
@@ -27,6 +29,10 @@ export const PAGES = {
   clients: {
     title: 'Clients',
     description: 'Manage client accounts, contacts, and project details.',
+  },
+  pipeline: {
+    title: 'Pipeline',
+    description: 'Track commercial progress across leads, proposals, delivery, and completion.',
   },
   tasks: {
     title: 'Tasks',
