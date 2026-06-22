@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import * as clientsApi from './api/clients.js'
 import * as tasksApi from './api/tasks.js'
 import { ApiError } from './api/client.js'
@@ -224,7 +225,9 @@ function DashboardSkeleton() {
 
 // ── Panels ────────────────────────────────────────────────────────────────
 
-function RecentUpdatesPanel({ updates, onNavigate }) {
+function RecentUpdatesPanel({ updates }) {
+  const navigate = useNavigate()
+
   return (
     <article className="dashboard-panel">
       <header className="dashboard-panel__header">
@@ -250,15 +253,13 @@ function RecentUpdatesPanel({ updates, onNavigate }) {
           <p className="dashboard-panel__empty-hint">
             Add your first client or task to get started.
           </p>
-          {onNavigate ? (
-            <button
-              type="button"
-              className="btn btn--secondary btn--sm"
-              onClick={() => onNavigate('clients')}
-            >
-              Add client
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            onClick={() => navigate('/clients')}
+          >
+            Add client
+          </button>
         </div>
       ) : (
         <ul className="activity-list">
@@ -287,7 +288,9 @@ function RecentUpdatesPanel({ updates, onNavigate }) {
   )
 }
 
-function UpcomingTasksPanel({ upcoming, onNavigate }) {
+function UpcomingTasksPanel({ upcoming }) {
+  const navigate = useNavigate()
+
   return (
     <article className="dashboard-panel">
       <header className="dashboard-panel__header">
@@ -313,15 +316,13 @@ function UpcomingTasksPanel({ upcoming, onNavigate }) {
           <p className="dashboard-panel__empty-hint">
             Create a task to start planning your workload.
           </p>
-          {onNavigate ? (
-            <button
-              type="button"
-              className="btn btn--secondary btn--sm"
-              onClick={() => onNavigate('tasks')}
-            >
-              Create task
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            onClick={() => navigate('/tasks')}
+          >
+            Create task
+          </button>
         </div>
       ) : (
         <ul className="task-list">
@@ -371,7 +372,7 @@ async function requestDashboardData() {
   }
 }
 
-export default function Dashboard({ onNavigate }) {
+export default function Dashboard() {
   const [loadStatus, setLoadStatus] = useState('loading')
   const [loadError, setLoadError] = useState(null)
   const [clients, setClients] = useState([])
@@ -460,8 +461,8 @@ export default function Dashboard({ onNavigate }) {
       </section>
 
       <section className="dashboard-panels" aria-label="Overview">
-        <RecentUpdatesPanel updates={updates} onNavigate={onNavigate} />
-        <UpcomingTasksPanel upcoming={upcoming} onNavigate={onNavigate} />
+        <RecentUpdatesPanel updates={updates} />
+        <UpcomingTasksPanel upcoming={upcoming} />
       </section>
     </div>
   )

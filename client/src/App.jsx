@@ -1,20 +1,32 @@
 import { useState } from 'react'
+import {
+  Navigate,
+  NavLink,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
 import AuthPanel from './AuthPanel'
 import Clients from './Clients'
 import Dashboard from './Dashboard'
 import Settings from './Settings'
 import Tasks from './Tasks'
 import { ApiError } from './api/client.js'
-import { NAV_ITEMS, PAGES } from './config/navigation'
+import { getPageKeyFromPath, NAV_ITEMS, PAGES } from './config/navigation'
 import useAuthSession from './hooks/useAuthSession'
 import { IconChevronDown } from './icons'
+import { buildAuthPath, getSafeNextPath } from './utils/authRouting'
 import { getInitials } from './utils/format'
 import './App.css'
 
-function AppShell({ user, workspace, activePage, onNavigate, onLogout }) {
+function AppShell({ user, workspace, onLogout }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState(null)
-  const page = PAGES[activePage]
+  const location = useLocation()
+  const page = PAGES[getPageKeyFromPath(location.pathname)]
   const workspaceInitials = workspace ? getInitials(workspace.name) : '—'
   const userInitials = user ? getInitials(user.name) : '—'
 
@@ -65,17 +77,18 @@ function AppShell({ user, workspace, activePage, onNavigate, onLogout }) {
               const Icon = item.icon
               return (
                 <li key={item.id}>
-                  <button
-                    type="button"
-                    className={`nav-item${activePage === item.id ? ' nav-item--active' : ''}`}
-                    onClick={() => onNavigate(item.id)}
-                    aria-current={activePage === item.id ? 'page' : undefined}
+                  <NavLink
+                    to={item.path}
+                    end={item.path === '/'}
+                    className={({ isActive }) =>
+                      `nav-item${isActive ? ' nav-item--active' : ''}`
+                    }
                   >
                     <span className="nav-item__icon">
                       <Icon />
                     </span>
                     <span className="nav-item__label">{item.label}</span>
-                  </button>
+                  </NavLink>
                 </li>
               )
             })}
@@ -115,23 +128,91 @@ function AppShell({ user, workspace, activePage, onNavigate, onLogout }) {
         </header>
 
         <main className="content">
-          {activePage === 'dashboard' ? (
-            <Dashboard onNavigate={onNavigate} />
-          ) : activePage === 'clients' ? (
-            <Clients />
-          ) : activePage === 'tasks' ? (
-            <Tasks />
-          ) : (
-            <Settings />
-          )}
+          <Outlet />
         </main>
       </div>
     </div>
   )
 }
 
+function AuthRoute({ auth }) {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const nextPath = getSafeNextPath(searchParams.get('next'))
+
+  async function handleLogin(credentials) {
+    await auth.login(credentials)
+    navigate(nextPath ?? '/', { replace: true })
+  }
+
+  async function handleRegister(payload) {
+    await auth.register(payload)
+    navigate(nextPath ?? '/', { replace: true })
+  }
+
+  return <AuthPanel onLogin={handleLogin} onRegister={handleRegister} />
+}
+
+function RequireAuth({ auth }) {
+  const location = useLocation()
+
+  if (auth.status === 'unauthenticated') {
+    return (
+      <Navigate
+        to={buildAuthPath({ mode: 'login', next: location.pathname })}
+        replace
+      />
+    )
+  }
+
+  return <Outlet />
+}
+
+function UnknownRoute({ auth }) {
+  if (auth.status === 'authenticated') {
+    return <Navigate to="/" replace />
+  }
+
+  return <Navigate to={buildAuthPath({ mode: 'login' })} replace />
+}
+
+function AppRoutes({ auth }) {
+  return (
+    <Routes>
+      <Route
+        path="/auth"
+        element={
+          auth.status === 'authenticated' ? (
+            <Navigate to="/" replace />
+          ) : (
+            <AuthRoute auth={auth} />
+          )
+        }
+      />
+
+      <Route element={<RequireAuth auth={auth} />}>
+        <Route
+          element={
+            <AppShell
+              user={auth.user}
+              workspace={auth.workspace}
+              onLogout={auth.logout}
+            />
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="clients" element={<Clients />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<UnknownRoute auth={auth} />} />
+    </Routes>
+  )
+}
+
 function App() {
-  const [activePage, setActivePage] = useState('dashboard')
   const auth = useAuthSession()
 
   if (auth.status === 'loading') {
@@ -151,19 +232,7 @@ function App() {
     )
   }
 
-  if (auth.status === 'unauthenticated') {
-    return <AuthPanel onLogin={auth.login} onRegister={auth.register} />
-  }
-
-  return (
-    <AppShell
-      user={auth.user}
-      workspace={auth.workspace}
-      activePage={activePage}
-      onNavigate={setActivePage}
-      onLogout={auth.logout}
-    />
-  )
+  return <AppRoutes auth={auth} />
 }
 
 export default App

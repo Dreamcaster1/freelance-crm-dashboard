@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ApiError } from './api/client.js'
+import { parseAuthMode } from './utils/authRouting'
 
 const EMPTY_LOGIN = { email: '', password: '' }
 const EMPTY_REGISTER = {
@@ -10,7 +12,8 @@ const EMPTY_REGISTER = {
 }
 
 export default function AuthPanel({ onLogin, onRegister }) {
-  const [mode, setMode] = useState('login')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const mode = parseAuthMode(searchParams.get('mode'))
   const [loginForm, setLoginForm] = useState(EMPTY_LOGIN)
   const [registerForm, setRegisterForm] = useState(EMPTY_REGISTER)
   const [error, setError] = useState(null)
@@ -19,8 +22,10 @@ export default function AuthPanel({ onLogin, onRegister }) {
   const registerInFlightRef = useRef(false)
 
   function switchMode(nextMode) {
-    setMode(nextMode)
     setError(null)
+    const params = new URLSearchParams(searchParams)
+    params.set('mode', nextMode)
+    setSearchParams(params)
   }
 
   async function handleLoginSubmit(event) {

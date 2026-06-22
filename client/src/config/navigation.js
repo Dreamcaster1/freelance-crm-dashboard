@@ -6,11 +6,18 @@ import {
 } from '../icons'
 
 export const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Overview', icon: IconLayoutDashboard },
-  { id: 'clients', label: 'Clients', icon: IconUsers },
-  { id: 'tasks', label: 'Tasks', icon: IconCheckSquare },
-  { id: 'settings', label: 'Settings', icon: IconSettings },
+  { id: 'dashboard', path: '/', label: 'Overview', icon: IconLayoutDashboard },
+  { id: 'clients', path: '/clients', label: 'Clients', icon: IconUsers },
+  { id: 'tasks', path: '/tasks', label: 'Tasks', icon: IconCheckSquare },
+  { id: 'settings', path: '/settings', label: 'Settings', icon: IconSettings },
 ]
+
+export function getPageKeyFromPath(pathname) {
+  const match = NAV_ITEMS.find(
+    (item) => item.path !== '/' && pathname.startsWith(item.path),
+  )
+  return match?.id ?? 'dashboard'
+}
 
 export const PAGES = {
   dashboard: {
