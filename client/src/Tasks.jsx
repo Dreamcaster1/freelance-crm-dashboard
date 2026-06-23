@@ -97,6 +97,8 @@ function getTaskDueDateInt(task) {
 function matchesTaskDueFilter(task, dueFilter) {
   if (dueFilter === 'all') return true
 
+  if (!isIncompleteTask(task)) return false
+
   const dueInt = getTaskDueDateInt(task)
 
   if (dueFilter === 'no-due-date') {
@@ -109,11 +111,11 @@ function matchesTaskDueFilter(task, dueFilter) {
   const dueSoonEnd = futureDateInt(7)
 
   if (dueFilter === 'overdue') {
-    return isIncompleteTask(task) && dueInt < today
+    return dueInt < today
   }
 
   if (dueFilter === 'due-soon') {
-    return isIncompleteTask(task) && dueInt >= today && dueInt <= dueSoonEnd
+    return dueInt >= today && dueInt <= dueSoonEnd
   }
 
   if (dueFilter === 'future') {
