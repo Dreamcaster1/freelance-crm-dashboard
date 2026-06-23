@@ -56,8 +56,10 @@ export function mapClientFromApi(apiClient) {
     status: apiClient.status,
     pipelineStage: normalizePipelineStage(apiClient.pipelineStage),
     projectValue: apiClient.projectValueCents / 100,
+    projectValueCents: apiClient.projectValueCents,
     lastActivity: formatRelativeActivity(apiClient.lastActivityAt),
     lastActivityAt: apiClient.lastActivityAt,
+    updatedAt: apiClient.updatedAt,
   }
 }
 

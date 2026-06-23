@@ -20,10 +20,35 @@ import {
   mapClientFromApi,
   mapClientsFromApi,
 } from './utils/clientMapper'
-import { getClientStatusBadge } from './utils/badges'
+import { getClientStatusBadge, CLIENT_STATUS_OPTIONS, PIPELINE_STAGE_OPTIONS } from './utils/badges'
 import { formatCurrency, getInitials } from './utils/format'
 
-function filterClients(clients, query) {
+const CLIENT_SORT_OPTIONS = [
+  { value: 'recently-updated', label: 'Recently updated' },
+  { value: 'alphabetical', label: 'Alphabetical A–Z' },
+  { value: 'project-value-desc', label: 'Project value: high to low' },
+  { value: 'project-value-asc', label: 'Project value: low to high' },
+]
+
+function parseTimestamp(value) {
+  if (!value) return null
+  const time = new Date(value).getTime()
+  return Number.isNaN(time) ? null : time
+}
+
+function compareIdsDesc(a, b) {
+  const idA = Number(a.id)
+  const idB = Number(b.id)
+  if (Number.isFinite(idA) && Number.isFinite(idB)) return idB - idA
+  return 0
+}
+
+function getProjectValueCentsForSort(client) {
+  const cents = client.projectValueCents
+  return Number.isFinite(cents) && cents >= 0 ? cents : 0
+}
+
+function filterClientsBySearch(clients, query) {
   const normalized = query.trim().toLowerCase()
   if (!normalized) return clients
 
@@ -33,6 +58,63 @@ function filterClients(clients, query) {
       client.contact.toLowerCase().includes(normalized) ||
       client.email.toLowerCase().includes(normalized),
   )
+}
+
+function sortClients(clients, sortKey) {
+  const sorted = [...clients]
+
+  if (sortKey === 'alphabetical') {
+    sorted.sort((a, b) => {
+      const byCompany = a.company.localeCompare(b.company)
+      if (byCompany !== 0) return byCompany
+      const byContact = a.contact.localeCompare(b.contact)
+      if (byContact !== 0) return byContact
+      const byEmail = a.email.localeCompare(b.email)
+      if (byEmail !== 0) return byEmail
+      return compareIdsDesc(a, b)
+    })
+    return sorted
+  }
+
+  if (sortKey === 'project-value-desc' || sortKey === 'project-value-asc') {
+    const direction = sortKey === 'project-value-desc' ? -1 : 1
+    sorted.sort((a, b) => {
+      const valueDiff =
+        (getProjectValueCentsForSort(a) - getProjectValueCentsForSort(b)) *
+        direction
+      if (valueDiff !== 0) return valueDiff
+      const byCompany = a.company.localeCompare(b.company)
+      if (byCompany !== 0) return byCompany
+      return compareIdsDesc(a, b)
+    })
+    return sorted
+  }
+
+  sorted.sort((a, b) => {
+    const timeA = parseTimestamp(a.updatedAt)
+    const timeB = parseTimestamp(b.updatedAt)
+    if (timeA == null && timeB == null) return compareIdsDesc(a, b)
+    if (timeA == null) return 1
+    if (timeB == null) return -1
+    if (timeB !== timeA) return timeB - timeA
+    return compareIdsDesc(a, b)
+  })
+
+  return sorted
+}
+
+function applyClientFilters(clients, { query, statusFilter, pipelineFilter, sortKey }) {
+  let result = filterClientsBySearch(clients, query)
+
+  if (statusFilter !== 'all') {
+    result = result.filter((client) => client.status === statusFilter)
+  }
+
+  if (pipelineFilter !== 'all') {
+    result = result.filter((client) => client.pipelineStage === pipelineFilter)
+  }
+
+  return sortClients(result, sortKey)
 }
 
 function getClientsLoadError(err) {
@@ -51,6 +133,9 @@ export default function Clients() {
   const [loadStatus, setLoadStatus] = useState('loading')
   const [loadError, setLoadError] = useState(null)
   const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [pipelineFilter, setPipelineFilter] = useState('all')
+  const [sortKey, setSortKey] = useState('recently-updated')
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -73,7 +158,6 @@ export default function Clients() {
     openSelection: openDrawer,
     closeSelection: closeDrawer,
   } = useSelectionState()
-  const trimmedQuery = query.trim()
   const saveInFlightRef = useRef(false)
   const deleteInFlightRef = useRef(false)
 
@@ -113,8 +197,14 @@ export default function Clients() {
   }, [])
 
   const filteredClients = useMemo(
-    () => filterClients(clients, query),
-    [clients, query],
+    () =>
+      applyClientFilters(clients, {
+        query,
+        statusFilter,
+        pipelineFilter,
+        sortKey,
+      }),
+    [clients, query, statusFilter, pipelineFilter, sortKey],
   )
 
   function handleOpenAddModal() {
@@ -226,20 +316,71 @@ export default function Clients() {
   return (
     <div className="clients">
       <div className="clients-toolbar">
-        <label className="clients-search">
-          <IconSearch className="clients-search__icon" />
-          <input
-            type="search"
-            className="clients-search__input"
-            placeholder="Search by company, contact, or email..."
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            aria-label="Search clients"
-          />
-        </label>
+        <div className="clients-toolbar__controls list-controls">
+          <label className="clients-search list-controls__search">
+            <IconSearch className="clients-search__icon" />
+            <input
+              type="search"
+              className="clients-search__input"
+              placeholder="Search by company, contact, or email..."
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label="Search clients"
+            />
+          </label>
+          <div className="list-controls__selects">
+            <label className="list-controls__field">
+              <span className="list-controls__label">Status</span>
+              <select
+                className="list-controls__select"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                aria-label="Filter by status"
+              >
+                <option value="all">All statuses</option>
+                {CLIENT_STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="list-controls__field">
+              <span className="list-controls__label">Pipeline</span>
+              <select
+                className="list-controls__select"
+                value={pipelineFilter}
+                onChange={(event) => setPipelineFilter(event.target.value)}
+                aria-label="Filter by pipeline stage"
+              >
+                <option value="all">All stages</option>
+                {PIPELINE_STAGE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="list-controls__field">
+              <span className="list-controls__label">Sort</span>
+              <select
+                className="list-controls__select"
+                value={sortKey}
+                onChange={(event) => setSortKey(event.target.value)}
+                aria-label="Sort clients"
+              >
+                {CLIENT_SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
         <button
           type="button"
-          className="btn btn--primary"
+          className="btn btn--primary clients-toolbar__action"
           onClick={handleOpenAddModal}
         >
           <IconPlus />
@@ -315,9 +456,9 @@ export default function Clients() {
               <TableEmptyState colSpan={6} className="clients-table__empty">
                 <span className="clients-table__empty-title">No clients found</span>
                 <span className="clients-table__empty-hint">
-                  {trimmedQuery
-                    ? `No results for “${trimmedQuery}”. Try another company, contact, or email.`
-                    : 'Add your first client to get started.'}
+                  {clients.length === 0
+                    ? 'Add your first client to get started.'
+                    : 'No clients match these filters.'}
                 </span>
               </TableEmptyState>
             )}

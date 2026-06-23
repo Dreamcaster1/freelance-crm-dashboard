@@ -10,7 +10,7 @@ import useSelectionState from './hooks/useSelectionState'
 import Badge from './Badge'
 import ConfirmModal from './ConfirmModal'
 import TaskDetailDrawer from './TaskDetailDrawer'
-import { IconPlus } from './icons'
+import { IconPlus, IconSearch } from './icons'
 import {
   SelectableTableRow,
   TableActions,
@@ -25,8 +25,28 @@ import {
 import {
   getTaskPriorityBadge,
   getTaskStatusBadge,
+  TASK_PRIORITY_OPTIONS,
   TASK_STATUS_OPTIONS,
 } from './utils/badges'
+import {
+  futureDateInt,
+  parseDateOnlyInt,
+  todayDateInt,
+} from './utils/format'
+
+const TASK_SORT_OPTIONS = [
+  { value: 'due-date', label: 'Due date' },
+  { value: 'recently-updated', label: 'Recently updated' },
+  { value: 'alphabetical', label: 'Alphabetical A–Z' },
+]
+
+const TASK_DUE_FILTER_OPTIONS = [
+  { value: 'all', label: 'All due dates' },
+  { value: 'overdue', label: 'Overdue' },
+  { value: 'due-soon', label: 'Due soon' },
+  { value: 'future', label: 'Future' },
+  { value: 'no-due-date', label: 'No due date' },
+]
 
 const FILTERS = [
   { id: 'all', label: 'All' },
@@ -49,6 +69,152 @@ const VALID_TASK_STATUSES = new Set(
   TASK_BOARD_COLUMNS.map((column) => column.value),
 )
 
+function parseTimestamp(value) {
+  if (!value) return null
+  const time = new Date(value).getTime()
+  return Number.isNaN(time) ? null : time
+}
+
+function compareIdsDesc(a, b) {
+  const idA = Number(a.id)
+  const idB = Number(b.id)
+  if (Number.isFinite(idA) && Number.isFinite(idB)) return idB - idA
+  return 0
+}
+
+function getDisplayStatus(task) {
+  return VALID_TASK_STATUSES.has(task.status) ? task.status : 'pending'
+}
+
+function isIncompleteTask(task) {
+  return getDisplayStatus(task) !== 'completed'
+}
+
+function getTaskDueDateInt(task) {
+  return parseDateOnlyInt(task.dueDateRaw)
+}
+
+function matchesTaskDueFilter(task, dueFilter) {
+  if (dueFilter === 'all') return true
+
+  const dueInt = getTaskDueDateInt(task)
+
+  if (dueFilter === 'no-due-date') {
+    return dueInt == null
+  }
+
+  if (dueInt == null) return false
+
+  const today = todayDateInt()
+  const dueSoonEnd = futureDateInt(7)
+
+  if (dueFilter === 'overdue') {
+    return isIncompleteTask(task) && dueInt < today
+  }
+
+  if (dueFilter === 'due-soon') {
+    return isIncompleteTask(task) && dueInt >= today && dueInt <= dueSoonEnd
+  }
+
+  if (dueFilter === 'future') {
+    return dueInt > dueSoonEnd
+  }
+
+  return true
+}
+
+function filterTasksBySearch(tasks, query) {
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) return tasks
+
+  return tasks.filter((task) => {
+    const clientLabel =
+      task.client === '—' ? 'unassigned' : task.client.toLowerCase()
+    const description = (task.description ?? '').toLowerCase()
+
+    return (
+      task.name.toLowerCase().includes(normalized) ||
+      clientLabel.includes(normalized) ||
+      description.includes(normalized)
+    )
+  })
+}
+
+function sortTasks(tasks, sortKey) {
+  const sorted = [...tasks]
+
+  if (sortKey === 'alphabetical') {
+    sorted.sort((a, b) => {
+      const byName = a.name.localeCompare(b.name)
+      if (byName !== 0) return byName
+      const byClient = a.client.localeCompare(b.client)
+      if (byClient !== 0) return byClient
+      return compareIdsDesc(a, b)
+    })
+    return sorted
+  }
+
+  if (sortKey === 'recently-updated') {
+    sorted.sort((a, b) => {
+      const timeA = parseTimestamp(a.updatedAt)
+      const timeB = parseTimestamp(b.updatedAt)
+      if (timeA == null && timeB == null) return compareIdsDesc(a, b)
+      if (timeA == null) return 1
+      if (timeB == null) return -1
+      if (timeB !== timeA) return timeB - timeA
+      return compareIdsDesc(a, b)
+    })
+    return sorted
+  }
+
+  sorted.sort((a, b) => {
+    const dueA = getTaskDueDateInt(a)
+    const dueB = getTaskDueDateInt(b)
+    if (dueA == null && dueB == null) {
+      const timeA = parseTimestamp(a.updatedAt)
+      const timeB = parseTimestamp(b.updatedAt)
+      if (timeA == null && timeB == null) return compareIdsDesc(a, b)
+      if (timeA == null) return 1
+      if (timeB == null) return -1
+      if (timeB !== timeA) return timeB - timeA
+      return compareIdsDesc(a, b)
+    }
+    if (dueA == null) return 1
+    if (dueB == null) return -1
+    if (dueA !== dueB) return dueA - dueB
+    const timeA = parseTimestamp(a.updatedAt)
+    const timeB = parseTimestamp(b.updatedAt)
+    if (timeA == null && timeB == null) return compareIdsDesc(a, b)
+    if (timeA == null) return 1
+    if (timeB == null) return -1
+    if (timeB !== timeA) return timeB - timeA
+    return compareIdsDesc(a, b)
+  })
+
+  return sorted
+}
+
+function applyTaskFilters(
+  tasks,
+  { query, statusFilter, priorityFilter, dueFilter, sortKey, applyStatusFilter },
+) {
+  let result = filterTasksBySearch(tasks, query)
+
+  if (applyStatusFilter && statusFilter !== 'all') {
+    result = result.filter((task) => task.status === statusFilter)
+  }
+
+  if (priorityFilter !== 'all') {
+    result = result.filter((task) => task.priority === priorityFilter)
+  }
+
+  if (dueFilter !== 'all') {
+    result = result.filter((task) => matchesTaskDueFilter(task, dueFilter))
+  }
+
+  return sortTasks(result, sortKey)
+}
+
 function getTasksLoadError(err) {
   return err instanceof ApiError
     ? err.message
@@ -59,10 +225,6 @@ function getTaskMoveError(err) {
   return err instanceof ApiError
     ? err.message
     : 'Unable to update task status. Try again.'
-}
-
-function getDisplayStatus(task) {
-  return VALID_TASK_STATUSES.has(task.status) ? task.status : 'pending'
 }
 
 function groupTasksByStatus(tasks) {
@@ -337,6 +499,10 @@ export default function Tasks() {
   const [loadStatus, setLoadStatus] = useState('loading')
   const [loadError, setLoadError] = useState(null)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [query, setQuery] = useState('')
+  const [priorityFilter, setPriorityFilter] = useState('all')
+  const [dueFilter, setDueFilter] = useState('all')
+  const [sortKey, setSortKey] = useState('due-date')
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -422,10 +588,18 @@ export default function Tasks() {
     return () => mediaQuery.removeEventListener('change', syncDesktopDrag)
   }, [])
 
-  const filteredTasks = useMemo(() => {
-    if (activeFilter === 'all') return tasks
-    return tasks.filter((task) => task.status === activeFilter)
-  }, [tasks, activeFilter])
+  const filteredTasks = useMemo(
+    () =>
+      applyTaskFilters(tasks, {
+        query,
+        statusFilter: activeFilter,
+        priorityFilter,
+        dueFilter,
+        sortKey,
+        applyStatusFilter: activeView === 'table',
+      }),
+    [tasks, query, activeFilter, priorityFilter, dueFilter, sortKey, activeView],
+  )
 
   const filterCounts = useMemo(() => {
     return {
@@ -436,7 +610,10 @@ export default function Tasks() {
     }
   }, [tasks])
 
-  const groupedBoardTasks = useMemo(() => groupTasksByStatus(tasks), [tasks])
+  const groupedBoardTasks = useMemo(
+    () => groupTasksByStatus(filteredTasks),
+    [filteredTasks],
+  )
 
   const handleStatusChange = useCallback(
     async (taskId, nextStatus) => {
@@ -765,6 +942,68 @@ export default function Tasks() {
         </button>
       </div>
 
+      <div className="tasks-controls list-controls">
+        <label className="tasks-search list-controls__search">
+          <IconSearch className="tasks-search__icon" />
+          <input
+            type="search"
+            className="tasks-search__input"
+            placeholder="Search by task, client, or description..."
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            aria-label="Search tasks"
+          />
+        </label>
+        <div className="list-controls__selects">
+          <label className="list-controls__field">
+            <span className="list-controls__label">Priority</span>
+            <select
+              className="list-controls__select"
+              value={priorityFilter}
+              onChange={(event) => setPriorityFilter(event.target.value)}
+              aria-label="Filter by priority"
+            >
+              <option value="all">All priorities</option>
+              {[...TASK_PRIORITY_OPTIONS].reverse().map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="list-controls__field">
+            <span className="list-controls__label">Due</span>
+            <select
+              className="list-controls__select"
+              value={dueFilter}
+              onChange={(event) => setDueFilter(event.target.value)}
+              aria-label="Filter by due date"
+            >
+              {TASK_DUE_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="list-controls__field">
+            <span className="list-controls__label">Sort</span>
+            <select
+              className="list-controls__select"
+              value={sortKey}
+              onChange={(event) => setSortKey(event.target.value)}
+              aria-label="Sort tasks"
+            >
+              {TASK_SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </div>
+
       {activeView === 'table' ? (
         <TableCard
           cardClassName="tasks-table-card"
@@ -828,7 +1067,7 @@ export default function Tasks() {
                 <TableEmptyState colSpan={6} className="tasks-table__empty">
                   {tasks.length === 0
                     ? 'No tasks yet. Add your first task to get started.'
-                    : 'No tasks match this filter.'}
+                    : 'No tasks match these filters.'}
                 </TableEmptyState>
               )}
             </tbody>
@@ -845,6 +1084,10 @@ export default function Tasks() {
           {tasks.length === 0 ? (
             <p className="tasks-board__empty-account">
               No tasks yet. Add your first task to get started.
+            </p>
+          ) : filteredTasks.length === 0 ? (
+            <p className="tasks-board__empty-account">
+              No tasks match these filters.
             </p>
           ) : null}
 
@@ -884,8 +1127,8 @@ export default function Tasks() {
           </div>
 
           <footer className="tasks-board__footer">
-            Showing {tasks.length} task{tasks.length === 1 ? '' : 's'} across 3
-            columns
+            Showing {filteredTasks.length} of {tasks.length} task
+            {tasks.length === 1 ? '' : 's'}
           </footer>
         </>
       )}

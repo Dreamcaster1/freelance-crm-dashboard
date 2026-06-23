@@ -25,17 +25,28 @@
 
 .clients-toolbar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.clients-toolbar__controls {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.clients-toolbar__action {
+  flex-shrink: 0;
 }
 
 .clients-search {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1;
-  max-width: 420px;
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: none;
 }
 
 .clients-search__icon {
@@ -345,4 +356,103 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Shared list filter controls (Clients, Tasks) */
+
+.list-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+}
+
+.list-controls__search {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.list-controls__selects {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+  flex: 1 1 320px;
+}
+
+.list-controls__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 120px;
+  max-width: 180px;
+}
+
+.list-controls__label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.list-controls__select {
+  width: 100%;
+  margin: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.35;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.list-controls__select:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.list-controls__select:focus-visible {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 1px var(--focus-ring);
+}
+
+@media (max-width: 768px) {
+  .clients-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .clients-toolbar__action {
+    align-self: flex-start;
+  }
+
+  .list-controls__search {
+    flex: 1 1 100%;
+  }
+
+  .list-controls__selects {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 1 1 100%;
+    gap: 10px;
+  }
+
+  .list-controls__field {
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .list-controls__selects {
+    grid-template-columns: 1fr;
+  }
 }

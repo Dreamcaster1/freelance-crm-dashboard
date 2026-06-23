@@ -127,6 +127,211 @@
   color: var(--text-tertiary);
 }
 
+/* Insights */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dashboard-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dashboard-insights__heading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.dashboard-insights__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.dashboard-insight {
+  padding: 18px 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.dashboard-insight:hover {
+  border-color: var(--border-strong);
+}
+
+.dashboard-insight__title {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.dashboard-insight__empty {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-tertiary);
+}
+
+.dashboard-insight__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.insight-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.insight-bar-row__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.insight-bar-row__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insight-bar-row__value {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.insight-bar-row__track {
+  height: 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(148, 163, 184, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+  overflow: hidden;
+}
+
+.insight-bar-row__fill {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: calc(var(--radius-sm) - 1px);
+}
+
+.insight-bar-row__fill--stage-lead {
+  background: rgba(109, 138, 166, 0.52);
+  box-shadow: inset 0 0 0 1px rgba(122, 154, 184, 0.34);
+}
+
+.insight-bar-row__fill--stage-proposal {
+  background: rgba(138, 124, 168, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(154, 143, 184, 0.34);
+}
+
+.insight-bar-row__fill--stage-active {
+  background: rgba(122, 148, 128, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(130, 160, 136, 0.34);
+}
+
+.insight-bar-row__fill--stage-awaiting-payment {
+  background: rgba(184, 154, 96, 0.48);
+  box-shadow: inset 0 0 0 1px rgba(196, 168, 112, 0.34);
+}
+
+.insight-bar-row__fill--stage-completed {
+  background: rgba(138, 145, 156, 0.46);
+  box-shadow: inset 0 0 0 1px rgba(154, 161, 171, 0.32);
+}
+
+.insight-bar-row__fill--task-pending {
+  background: rgba(184, 154, 96, 0.48);
+  box-shadow: inset 0 0 0 1px rgba(196, 168, 112, 0.34);
+}
+
+.insight-bar-row__fill--task-in-progress {
+  background: rgba(109, 138, 166, 0.52);
+  box-shadow: inset 0 0 0 1px rgba(122, 154, 184, 0.34);
+}
+
+.insight-bar-row__fill--task-completed {
+  background: rgba(122, 148, 128, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(130, 160, 136, 0.34);
+}
+
+.insight-bar-row__fill--value-magnitude {
+  background: rgba(109, 138, 166, 0.48);
+  box-shadow: inset 0 0 0 1px rgba(122, 154, 184, 0.3);
+}
+
+.insight-bar-row__fill--neutral {
+  background: rgba(148, 163, 184, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.22);
+}
+
+.dashboard-skeleton--insight-heading {
+  width: 140px;
+  height: 12px;
+  display: block;
+}
+
+.dashboard-skeleton--insight-title {
+  width: 170px;
+  height: 12px;
+  display: block;
+  margin-bottom: 14px;
+}
+
+.dashboard-skeleton--insight-row {
+  display: block;
+  width: 100%;
+  height: 28px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-insights__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-insights__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-insight {
+    padding: 16px 18px;
+  }
+}
+
 .dashboard-panels {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;

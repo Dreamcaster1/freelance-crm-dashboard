@@ -12,7 +12,13 @@ import {
   IconCheckSquare,
   IconUsers,
 } from './icons'
-import { getTaskPriorityBadge, getTaskStatusBadge } from './utils/badges'
+import {
+  getTaskPriorityBadge,
+  getTaskStatusBadge,
+  PIPELINE_STAGE_OPTIONS,
+  PIPELINE_STAGE_VALUES,
+  TASK_STATUS_OPTIONS,
+} from './utils/badges'
 import {
   formatDueDate,
   formatGBP,
@@ -190,6 +196,312 @@ function getUpdateBadge(label) {
     : { label, variant: 'neutral' }
 }
 
+const TASK_STATUS_INSIGHT_ORDER = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+]
+
+const VALID_TASK_STATUSES = new Set(
+  TASK_STATUS_OPTIONS.map((option) => option.value),
+)
+
+const MIN_NONZERO_BAR_PERCENT = 2
+
+const PIPELINE_STAGE_BAR_ACCENT = {
+  lead: 'stage-lead',
+  proposal: 'stage-proposal',
+  active: 'stage-active',
+  'awaiting-payment': 'stage-awaiting-payment',
+  completed: 'stage-completed',
+}
+
+const TASK_STATUS_BAR_ACCENT = {
+  pending: 'task-pending',
+  'in-progress': 'task-in-progress',
+  completed: 'task-completed',
+}
+
+const VALUE_MAGNITUDE_BAR_ACCENT = 'value-magnitude'
+
+function normalizeProjectValueCents(value) {
+  return Number.isFinite(value) && value >= 0 ? value : 0
+}
+
+function computeBarSharePercent(value, total) {
+  if (!total || value <= 0) return 0
+
+  const percent = (value / total) * 100
+  if (percent > 0 && percent < MIN_NONZERO_BAR_PERCENT) {
+    return MIN_NONZERO_BAR_PERCENT
+  }
+
+  return percent
+}
+
+function formatPercentOfTotal(percent) {
+  if (percent <= 0) return ''
+  if (percent >= 10) return `${Math.round(percent)}% of total`
+  return `${percent.toFixed(1)}% of total`
+}
+
+function computePipelineClientCounts(clients) {
+  const counts = Object.fromEntries(
+    PIPELINE_STAGE_OPTIONS.map((option) => [option.value, 0]),
+  )
+  let unassigned = 0
+
+  for (const client of clients) {
+    const stage = client.pipelineStage
+    if (PIPELINE_STAGE_VALUES.includes(stage)) {
+      counts[stage] += 1
+    } else {
+      unassigned += 1
+    }
+  }
+
+  const rows = PIPELINE_STAGE_OPTIONS.map((option) => ({
+    key: option.value,
+    label: option.label,
+    rawValue: counts[option.value],
+    displayValue: String(counts[option.value]),
+    accent: PIPELINE_STAGE_BAR_ACCENT[option.value] ?? 'neutral',
+  }))
+
+  if (unassigned > 0) {
+    rows.push({
+      key: 'unassigned',
+      label: 'Unassigned',
+      rawValue: unassigned,
+      displayValue: String(unassigned),
+      accent: 'neutral',
+    })
+  }
+
+  const totalCount = rows.reduce((sum, row) => sum + row.rawValue, 0)
+
+  return {
+    rows: rows.map((row) => {
+      const percentShare =
+        totalCount > 0 ? (row.rawValue / totalCount) * 100 : 0
+
+      return {
+        ...row,
+        barScale: computeBarSharePercent(row.rawValue, totalCount),
+        percentShare,
+      }
+    }),
+    emptyMessage: totalCount === 0 ? 'No clients yet.' : null,
+    ariaSummary:
+      totalCount === 0
+        ? 'Clients by pipeline stage. No clients yet.'
+        : `Clients by pipeline stage. ${totalCount} clients across ${rows.filter((row) => row.rawValue > 0).length} stages.`,
+  }
+}
+
+function computeTaskStatusCounts(tasks) {
+  const counts = Object.fromEntries(
+    TASK_STATUS_INSIGHT_ORDER.map((option) => [option.value, 0]),
+  )
+  let unknown = 0
+
+  for (const task of tasks) {
+    const status = task.status
+    if (VALID_TASK_STATUSES.has(status)) {
+      counts[status] += 1
+    } else {
+      unknown += 1
+    }
+  }
+
+  const rows = TASK_STATUS_INSIGHT_ORDER.map((option) => ({
+    key: option.value,
+    label: option.label,
+    rawValue: counts[option.value],
+    displayValue: String(counts[option.value]),
+    accent: TASK_STATUS_BAR_ACCENT[option.value] ?? 'neutral',
+  }))
+
+  if (unknown > 0) {
+    rows.push({
+      key: 'unknown',
+      label: 'Unknown',
+      rawValue: unknown,
+      displayValue: String(unknown),
+      accent: 'neutral',
+    })
+  }
+
+  const totalCount = rows.reduce((sum, row) => sum + row.rawValue, 0)
+
+  return {
+    rows: rows.map((row) => {
+      const percentShare =
+        totalCount > 0 ? (row.rawValue / totalCount) * 100 : 0
+
+      return {
+        ...row,
+        barScale: computeBarSharePercent(row.rawValue, totalCount),
+        percentShare,
+      }
+    }),
+    emptyMessage: totalCount === 0 ? 'No tasks yet.' : null,
+    ariaSummary:
+      totalCount === 0
+        ? 'Tasks by status. No tasks yet.'
+        : `Tasks by status. ${totalCount} tasks across pending, in progress, and completed.`,
+  }
+}
+
+function computePipelineValueTotals(clients) {
+  const totals = Object.fromEntries(
+    PIPELINE_STAGE_OPTIONS.map((option) => [option.value, 0]),
+  )
+  let unassignedCents = 0
+
+  for (const client of clients) {
+    const cents = normalizeProjectValueCents(client.projectValueCents)
+    const stage = client.pipelineStage
+    if (PIPELINE_STAGE_VALUES.includes(stage)) {
+      totals[stage] += cents
+    } else {
+      unassignedCents += cents
+    }
+  }
+
+  const rows = PIPELINE_STAGE_OPTIONS.map((option) => ({
+    key: option.value,
+    label: option.label,
+    rawValue: totals[option.value],
+    displayValue: formatGBP(totals[option.value]),
+    accent: VALUE_MAGNITUDE_BAR_ACCENT,
+  }))
+
+  if (unassignedCents > 0) {
+    rows.push({
+      key: 'unassigned',
+      label: 'Unassigned',
+      rawValue: unassignedCents,
+      displayValue: formatGBP(unassignedCents),
+      accent: VALUE_MAGNITUDE_BAR_ACCENT,
+    })
+  }
+
+  const totalCents = rows.reduce((sum, row) => sum + row.rawValue, 0)
+
+  return {
+    rows: rows.map((row) => {
+      const percentShare =
+        totalCents > 0 ? (row.rawValue / totalCents) * 100 : 0
+
+      return {
+        ...row,
+        barScale: computeBarSharePercent(row.rawValue, totalCents),
+        percentShare,
+      }
+    }),
+    emptyMessage: totalCents === 0 ? 'No project values set.' : null,
+    ariaSummary:
+      totalCents === 0
+        ? 'Project value by pipeline stage. No project values set.'
+        : `Project value by pipeline stage. Total ${formatGBP(totalCents)}.`,
+  }
+}
+
+function InsightBarRow({ label, displayValue, barScale, percentShare, accent }) {
+  const shareLabel = formatPercentOfTotal(percentShare)
+  const readable = shareLabel
+    ? `${label}: ${displayValue}, ${shareLabel}`
+    : `${label}: ${displayValue}`
+
+  return (
+    <div className="insight-bar-row">
+      <div className="insight-bar-row__header">
+        <span className="insight-bar-row__label">{label}</span>
+        <span className="insight-bar-row__value">{displayValue}</span>
+      </div>
+      <div
+        className="insight-bar-row__track"
+        aria-hidden="true"
+        title={shareLabel || undefined}
+      >
+        <span
+          className={`insight-bar-row__fill insight-bar-row__fill--${accent}`}
+          style={{ width: `${barScale}%` }}
+        />
+      </div>
+      <span className="visually-hidden">{readable}</span>
+    </div>
+  )
+}
+
+function InsightCard({ title, ariaSummary, emptyMessage, rows }) {
+  return (
+    <article className="dashboard-insight" aria-label={ariaSummary}>
+      <h3 className="dashboard-insight__title">{title}</h3>
+      {emptyMessage ? (
+        <p className="dashboard-insight__empty">{emptyMessage}</p>
+      ) : (
+        <div className="dashboard-insight__rows">
+          {rows.map((row) => (
+            <InsightBarRow
+              key={row.key}
+              label={row.label}
+              displayValue={row.displayValue}
+              barScale={row.barScale}
+              percentShare={row.percentShare}
+              accent={row.accent}
+            />
+          ))}
+        </div>
+      )}
+    </article>
+  )
+}
+
+function DashboardInsights({ clients, tasks }) {
+  const pipelineClientCounts = useMemo(
+    () => computePipelineClientCounts(clients),
+    [clients],
+  )
+  const taskStatusCounts = useMemo(
+    () => computeTaskStatusCounts(tasks),
+    [tasks],
+  )
+  const pipelineValueTotals = useMemo(
+    () => computePipelineValueTotals(clients),
+    [clients],
+  )
+
+  return (
+    <section className="dashboard-insights" aria-labelledby="dashboard-insights-heading">
+      <h2 className="dashboard-insights__heading" id="dashboard-insights-heading">
+        Business overview
+      </h2>
+      <div className="dashboard-insights__grid">
+        <InsightCard
+          title="Clients by pipeline stage"
+          ariaSummary={pipelineClientCounts.ariaSummary}
+          emptyMessage={pipelineClientCounts.emptyMessage}
+          rows={pipelineClientCounts.rows}
+        />
+        <InsightCard
+          title="Tasks by status"
+          ariaSummary={taskStatusCounts.ariaSummary}
+          emptyMessage={taskStatusCounts.emptyMessage}
+          rows={taskStatusCounts.rows}
+        />
+        <InsightCard
+          title="Project value by pipeline stage"
+          ariaSummary={pipelineValueTotals.ariaSummary}
+          emptyMessage={pipelineValueTotals.emptyMessage}
+          rows={pipelineValueTotals.rows}
+        />
+      </div>
+    </section>
+  )
+}
+
 // ── Skeleton ───────────────────────────────────────────────────────────────
 
 function DashboardSkeleton() {
@@ -205,6 +517,20 @@ function DashboardSkeleton() {
             <span className="dashboard-skeleton dashboard-skeleton--stat-detail" />
           </article>
         ))}
+      </section>
+
+      <section className="dashboard-insights dashboard-insights--skeleton" aria-hidden="true">
+        <span className="dashboard-skeleton dashboard-skeleton--insight-heading" />
+        <div className="dashboard-insights__grid">
+          {[0, 1, 2].map((i) => (
+            <article key={i} className="dashboard-insight">
+              <span className="dashboard-skeleton dashboard-skeleton--insight-title" />
+              {[0, 1, 2, 3].map((j) => (
+                <span key={j} className="dashboard-skeleton dashboard-skeleton--insight-row" />
+              ))}
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="dashboard-panels">
@@ -459,6 +785,8 @@ export default function Dashboard() {
           )
         })}
       </section>
+
+      <DashboardInsights clients={clients} tasks={tasks} />
 
       <section className="dashboard-panels" aria-label="Overview">
         <RecentUpdatesPanel updates={updates} />

@@ -11,6 +11,7 @@ export function mapTaskFromApi(apiTask) {
     dueDate: formatDueDate(apiTask.dueDate),
     dueDateRaw: apiTask.dueDate,
     description: apiTask.description ?? '',
+    updatedAt: apiTask.updatedAt,
   }
 }
 
