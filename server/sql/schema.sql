@@ -8,6 +8,7 @@ CREATE DATABASE IF NOT EXISTS clientflow
 USE clientflow;
 
 DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS client_notes;
 DROP TABLE IF EXISTS clients;
 DROP TABLE IF EXISTS workspace_members;
 DROP TABLE IF EXISTS workspaces;
@@ -69,6 +70,25 @@ CREATE TABLE clients (
   KEY idx_clients_email (email),
   CONSTRAINT fk_clients_workspace
     FOREIGN KEY (workspace_id) REFERENCES workspaces (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE client_notes (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  workspace_id BIGINT UNSIGNED NOT NULL,
+  client_id BIGINT UNSIGNED NOT NULL,
+  author_user_id BIGINT UNSIGNED NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_client_notes_workspace_client_created (workspace_id, client_id, created_at),
+  KEY idx_client_notes_client_id (client_id),
+  KEY idx_client_notes_author_user_id (author_user_id),
+  CONSTRAINT fk_client_notes_workspace
+    FOREIGN KEY (workspace_id) REFERENCES workspaces (id) ON DELETE CASCADE,
+  CONSTRAINT fk_client_notes_client
+    FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE CASCADE,
+  CONSTRAINT fk_client_notes_author_user
+    FOREIGN KEY (author_user_id) REFERENCES users (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE tasks (

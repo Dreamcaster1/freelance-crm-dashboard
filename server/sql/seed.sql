@@ -23,6 +23,11 @@ FROM tasks t
 INNER JOIN workspaces w ON w.id = t.workspace_id
 WHERE w.slug = @demo_workspace_slug;
 
+DELETE cn
+FROM client_notes cn
+INNER JOIN workspaces w ON w.id = cn.workspace_id
+WHERE w.slug = @demo_workspace_slug;
+
 DELETE c
 FROM clients c
 INNER JOIN workspaces w ON w.id = c.workspace_id
