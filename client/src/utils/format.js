@@ -46,6 +46,22 @@ export function formatRelativeActivity(isoString) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+export function formatNoteTimestamp(isoString) {
+  if (!isoString) return '—'
+
+  const date = new Date(isoString)
+  if (Number.isNaN(date.getTime())) return '—'
+
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date)
+}
+
 export function formatDueDate(dateValue) {
   if (!dateValue) return '—'
 

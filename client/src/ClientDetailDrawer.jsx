@@ -1,4 +1,5 @@
 import Badge from './Badge'
+import ClientNotesTimeline from './ClientNotesTimeline'
 import Drawer from './Drawer'
 import { getClientStatusBadge, getPipelineStageBadge } from './utils/badges'
 import { formatCurrency, getInitials } from './utils/format'
@@ -68,14 +69,7 @@ export default function ClientDetailDrawer({ client, onClose, onEdit, onDelete }
         </div>
       </dl>
 
-      <section className="drawer-activity" aria-label="Recent notes and activity">
-        <header className="drawer-activity__header">
-          <h3 className="drawer-activity__title">Recent notes &amp; activity</h3>
-        </header>
-        <p className="drawer-details__value drawer-details__value--muted">
-          No activity history available yet.
-        </p>
-      </section>
+      <ClientNotesTimeline key={client.id} clientId={client.id} />
     </Drawer>
   )
 }

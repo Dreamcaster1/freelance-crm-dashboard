@@ -23,3 +23,20 @@ export function deleteClient(id) {
     method: 'DELETE',
   })
 }
+
+export function listClientNotes(clientId) {
+  return apiRequest(`/api/clients/${clientId}/notes`)
+}
+
+export function createClientNote(clientId, body) {
+  return apiRequest(`/api/clients/${clientId}/notes`, {
+    method: 'POST',
+    body,
+  })
+}
+
+export function deleteClientNote(clientId, noteId) {
+  return apiRequest(`/api/clients/${clientId}/notes/${noteId}`, {
+    method: 'DELETE',
+  })
+}
