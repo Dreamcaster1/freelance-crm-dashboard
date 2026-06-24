@@ -30,6 +30,14 @@ export const TASK_PRIORITY_OPTIONS = [
   { value: 'low', label: 'Low', variant: 'neutral' },
 ]
 
+export const INVOICE_STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft', variant: 'neutral' },
+  { value: 'sent', label: 'Sent', variant: 'info' },
+  { value: 'overdue', label: 'Overdue', variant: 'danger' },
+  { value: 'paid', label: 'Paid', variant: 'success' },
+  { value: 'cancelled', label: 'Cancelled', variant: 'neutral' },
+]
+
 function getOptionValue(options, badgeOrValue, fallbackValue) {
   if (typeof badgeOrValue === 'string') return badgeOrValue
 
@@ -62,4 +70,20 @@ export function getTaskStatusBadge(status) {
 
 export function getTaskPriorityBadge(priority) {
   return getBadge(TASK_PRIORITY_OPTIONS, priority, 'medium')
+}
+
+export function getInvoiceDisplayStatus(invoice) {
+  if (invoice.isOverdue) {
+    return 'overdue'
+  }
+
+  return invoice.status
+}
+
+export function getInvoiceStatusBadge(invoice) {
+  return getBadge(
+    INVOICE_STATUS_OPTIONS,
+    getInvoiceDisplayStatus(invoice),
+    'draft',
+  )
 }

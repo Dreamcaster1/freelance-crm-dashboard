@@ -5,6 +5,7 @@ import { errorMiddleware } from './middleware/errorMiddleware.js'
 import authRoutes from './routes/authRoutes.js'
 import clientRoutes from './routes/clientRoutes.js'
 import healthRoutes from './routes/healthRoutes.js'
+import invoiceRoutes from './routes/invoiceRoutes.js'
 import taskRoutes from './routes/taskRoutes.js'
 
 const app = express()
@@ -21,6 +22,7 @@ app.use(sessionMiddleware)
 app.use('/api/health', healthRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/clients', clientRoutes)
+app.use('/api/invoices', invoiceRoutes)
 app.use('/api/tasks', taskRoutes)
 
 app.use(errorMiddleware)

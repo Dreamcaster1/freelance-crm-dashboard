@@ -12,6 +12,7 @@ import {
 import AuthPanel from './AuthPanel'
 import Clients from './Clients'
 import Dashboard from './Dashboard'
+import Invoices from './Invoices'
 import Pipeline from './Pipeline'
 import Settings from './Settings'
 import Tasks from './Tasks'
@@ -205,6 +206,7 @@ function AppRoutes({ auth }) {
           <Route path="clients" element={<Clients />} />
           <Route path="clients/notes" element={<Clients />} />
           <Route path="pipeline" element={<Pipeline />} />
+          <Route path="invoices" element={<Invoices />} />
           <Route path="tasks/board" element={<Tasks />} />
           <Route path="tasks" element={<Tasks />} />
           <Route

@@ -1,6 +1,7 @@
 import {
   IconBriefcase,
   IconCheckSquare,
+  IconFile,
   IconLayoutDashboard,
   IconSettings,
   IconUsers,
@@ -10,6 +11,7 @@ export const NAV_ITEMS = [
   { id: 'dashboard', path: '/', label: 'Overview', icon: IconLayoutDashboard },
   { id: 'clients', path: '/clients', label: 'Clients', icon: IconUsers },
   { id: 'pipeline', path: '/pipeline', label: 'Pipeline', icon: IconBriefcase },
+  { id: 'invoices', path: '/invoices', label: 'Invoices', icon: IconFile },
   { id: 'tasks', path: '/tasks', label: 'Tasks', icon: IconCheckSquare },
   { id: 'settings', path: '/settings', label: 'Settings', icon: IconSettings },
 ]
@@ -33,6 +35,10 @@ export const PAGES = {
   pipeline: {
     title: 'Pipeline',
     description: 'Track commercial progress across leads, proposals, delivery, and completion.',
+  },
+  invoices: {
+    title: 'Invoices',
+    description: 'Track client invoices, payment status, and amounts due.',
   },
   tasks: {
     title: 'Tasks',
