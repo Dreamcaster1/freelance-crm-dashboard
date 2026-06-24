@@ -24,6 +24,10 @@ export function deleteClient(id) {
   })
 }
 
+export function listWorkspaceClientNotes() {
+  return apiRequest('/api/clients/notes')
+}
+
 export function listClientNotes(clientId) {
   return apiRequest(`/api/clients/${clientId}/notes`)
 }

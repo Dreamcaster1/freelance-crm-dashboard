@@ -27,3 +27,23 @@ export function mapClientNoteResponse(note) {
 export function mapClientNoteResponses(notes) {
   return notes.map(mapClientNoteResponse)
 }
+
+export function mapWorkspaceClientNoteResponse(note) {
+  return {
+    id: note.id,
+    content: note.content,
+    createdAt: formatIsoDateTimeOrNull(note.created_at),
+    author: {
+      id: note.author_user_id,
+      name: note.author_name,
+    },
+    client: {
+      id: note.client_id,
+      company: note.client_company,
+    },
+  }
+}
+
+export function mapWorkspaceClientNoteResponses(notes) {
+  return notes.map(mapWorkspaceClientNoteResponse)
+}

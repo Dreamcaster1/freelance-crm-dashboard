@@ -10,6 +10,11 @@ const CLIENT_NOTE_COLUMNS = `
   u.name AS author_name
 `
 
+const WORKSPACE_CLIENT_NOTE_COLUMNS = `
+  ${CLIENT_NOTE_COLUMNS},
+  c.company AS client_company
+`
+
 export async function findClientNotesByWorkspaceClient(workspaceId, clientId) {
   const [rows] = await pool.query(
     `SELECT ${CLIENT_NOTE_COLUMNS}
@@ -18,6 +23,21 @@ export async function findClientNotesByWorkspaceClient(workspaceId, clientId) {
      WHERE cn.workspace_id = ? AND cn.client_id = ?
      ORDER BY cn.created_at DESC, cn.id DESC`,
     [workspaceId, clientId],
+  )
+  return rows
+}
+
+export async function findClientNotesByWorkspace(workspaceId) {
+  const [rows] = await pool.query(
+    `SELECT ${WORKSPACE_CLIENT_NOTE_COLUMNS}
+     FROM client_notes cn
+     INNER JOIN clients c
+       ON c.id = cn.client_id
+      AND c.workspace_id = cn.workspace_id
+     INNER JOIN users u ON u.id = cn.author_user_id
+     WHERE cn.workspace_id = ?
+     ORDER BY cn.created_at DESC, cn.id DESC`,
+    [workspaceId],
   )
   return rows
 }

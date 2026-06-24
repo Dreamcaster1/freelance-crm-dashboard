@@ -10,6 +10,7 @@ router.use(requireAuth)
 
 router.get('/', asyncHandler(clientController.listClients))
 router.post('/', asyncHandler(clientController.createClientHandler))
+router.get('/notes', asyncHandler(clientNoteController.listWorkspaceClientNotes))
 router.get('/:id/notes', asyncHandler(clientNoteController.listClientNotes))
 router.post('/:id/notes', asyncHandler(clientNoteController.createClientNoteHandler))
 router.delete(

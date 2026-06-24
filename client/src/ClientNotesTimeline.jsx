@@ -34,7 +34,7 @@ function validateNoteContent(value) {
   return null
 }
 
-export default function ClientNotesTimeline({ clientId }) {
+export default function ClientNotesTimeline({ clientId, onNotesChanged, notesRevision }) {
   const [notes, setNotes] = useState([])
   const [loadStatus, setLoadStatus] = useState('loading')
   const [loadError, setLoadError] = useState(null)
@@ -81,7 +81,7 @@ export default function ClientNotesTimeline({ clientId }) {
     return () => {
       cancelled = true
     }
-  }, [clientId])
+  }, [clientId, notesRevision])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -103,6 +103,7 @@ export default function ClientNotesTimeline({ clientId }) {
       const data = await clientsApi.createClientNote(clientId, payload)
       setNotes((current) => [data.note, ...current])
       setContent('')
+      onNotesChanged?.()
     } catch (err) {
       setSaveError(getNoteSaveError(err))
     } finally {
@@ -121,6 +122,7 @@ export default function ClientNotesTimeline({ clientId }) {
     try {
       await clientsApi.deleteClientNote(clientId, noteId)
       setNotes((current) => current.filter((note) => note.id !== noteId))
+      onNotesChanged?.()
     } catch (err) {
       setDeleteError(getNoteDeleteError(err))
     } finally {

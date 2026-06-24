@@ -2,15 +2,27 @@ import { findClientById } from '../models/clientModel.js'
 import {
   createClientNote,
   deleteClientNote,
+  findClientNotesByWorkspace,
   findClientNotesByWorkspaceClient,
 } from '../models/clientNoteModel.js'
 import {
   mapClientNoteResponse,
   mapClientNoteResponses,
+  mapWorkspaceClientNoteResponses,
 } from '../utils/clientNoteMapper.js'
 import { assertJsonObject } from '../utils/validation.js'
 
 const MAX_NOTE_CONTENT_LENGTH = 2000
+
+export async function listWorkspaceClientNotes(req, res) {
+  const workspaceId = req.session.workspaceId
+  const notes = await findClientNotesByWorkspace(workspaceId)
+
+  return res.json({
+    ok: true,
+    notes: mapWorkspaceClientNoteResponses(notes),
+  })
+}
 
 function parseClientId(rawId) {
   const clientId = Number(rawId)

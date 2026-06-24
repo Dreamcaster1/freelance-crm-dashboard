@@ -4,7 +4,14 @@ import Drawer from './Drawer'
 import { getClientStatusBadge, getPipelineStageBadge } from './utils/badges'
 import { formatCurrency, getInitials } from './utils/format'
 
-export default function ClientDetailDrawer({ client, onClose, onEdit, onDelete }) {
+export default function ClientDetailDrawer({
+  client,
+  onClose,
+  onEdit,
+  onDelete,
+  onNotesChanged,
+  notesRevision,
+}) {
   if (!client) return null
 
   return (
@@ -69,7 +76,12 @@ export default function ClientDetailDrawer({ client, onClose, onEdit, onDelete }
         </div>
       </dl>
 
-      <ClientNotesTimeline key={client.id} clientId={client.id} />
+      <ClientNotesTimeline
+        key={client.id}
+        clientId={client.id}
+        onNotesChanged={onNotesChanged}
+        notesRevision={notesRevision}
+      />
     </Drawer>
   )
 }
