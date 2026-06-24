@@ -5,10 +5,12 @@ import {
   findClientsByWorkspace,
   updateClient,
 } from '../models/clientModel.js'
+import { findTasksByWorkspaceClient } from '../models/taskModel.js'
 import {
   mapClientResponse,
   mapClientResponses,
 } from '../utils/clientMapper.js'
+import { mapTaskResponses } from '../utils/taskMapper.js'
 import {
   assertJsonObject,
   parseDateTimeOrNull,
@@ -259,6 +261,27 @@ export async function getClient(req, res) {
   return res.json({
     ok: true,
     client: mapClientResponse(client),
+  })
+}
+
+export async function listClientTasks(req, res) {
+  const workspaceId = req.session.workspaceId
+  const clientId = parseClientId(req.params.id)
+
+  if (!clientId) {
+    return res.status(400).json({ ok: false, error: 'Invalid client id.' })
+  }
+
+  const client = await findClientById(workspaceId, clientId)
+  if (!client) {
+    return res.status(404).json({ ok: false, error: 'Client not found.' })
+  }
+
+  const tasks = await findTasksByWorkspaceClient(workspaceId, clientId)
+
+  return res.json({
+    ok: true,
+    tasks: mapTaskResponses(tasks),
   })
 }
 

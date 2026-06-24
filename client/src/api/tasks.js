@@ -4,6 +4,10 @@ export function listTasks() {
   return apiRequest('/api/tasks')
 }
 
+export function listClientTasks(clientId) {
+  return apiRequest(`/api/clients/${clientId}/tasks`)
+}
+
 export function createTask(body) {
   return apiRequest('/api/tasks', {
     method: 'POST',

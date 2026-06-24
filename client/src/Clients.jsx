@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import AddClientModal from './AddClientModal'
 import * as clientsApi from './api/clients.js'
 import { ApiError } from './api/client.js'
@@ -134,6 +134,7 @@ const CLIENTS_NOTES_PATH = '/clients/notes'
 
 export default function Clients() {
   const location = useLocation()
+  const navigate = useNavigate()
   const activeView = location.pathname === CLIENTS_NOTES_PATH ? 'notes' : 'table'
   const [clients, setClients] = useState([])
   const [loadStatus, setLoadStatus] = useState('loading')
@@ -171,6 +172,13 @@ export default function Clients() {
   const handleNotesChanged = useCallback(() => {
     setNotesRevision((current) => current + 1)
   }, [])
+
+  const handleOpenTask = useCallback(
+    (taskId) => {
+      navigate(`/tasks?taskId=${taskId}`)
+    },
+    [navigate],
+  )
 
   const fetchClients = useCallback(async () => {
     setLoadStatus('loading')
@@ -524,6 +532,7 @@ export default function Clients() {
         onDelete={openDeleteModal}
         onNotesChanged={handleNotesChanged}
         notesRevision={notesRevision}
+        onOpenTask={handleOpenTask}
       />
 
       <ConfirmModal

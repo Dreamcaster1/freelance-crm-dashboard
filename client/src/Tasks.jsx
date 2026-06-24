@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import AddTaskModal from './AddTaskModal'
 import * as clientsApi from './api/clients.js'
 import * as tasksApi from './api/tasks.js'
@@ -495,6 +495,8 @@ const TASKS_BOARD_PATH = '/tasks/board'
 export default function Tasks() {
   const location = useLocation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const taskIdParam = searchParams.get('taskId')
   const activeView = location.pathname === TASKS_BOARD_PATH ? 'board' : 'table'
   const [tasks, setTasks] = useState([])
   const [clients, setClients] = useState([])
@@ -589,6 +591,39 @@ export default function Tasks() {
     mediaQuery.addEventListener('change', syncDesktopDrag)
     return () => mediaQuery.removeEventListener('change', syncDesktopDrag)
   }, [])
+
+  const deepLinkTask = useMemo(() => {
+    if (loadStatus !== 'ready' || !taskIdParam) return null
+
+    const taskId = Number(taskIdParam)
+    if (!Number.isInteger(taskId) || taskId <= 0) return null
+
+    return tasks.find((item) => item.id === taskId) ?? null
+  }, [loadStatus, taskIdParam, tasks])
+
+  const deepLinkUnavailable = useMemo(() => {
+    if (loadStatus !== 'ready' || !taskIdParam) return false
+
+    const taskId = Number(taskIdParam)
+    if (!Number.isInteger(taskId) || taskId <= 0) return true
+
+    return deepLinkTask == null
+  }, [loadStatus, taskIdParam, deepLinkTask])
+
+  useEffect(() => {
+    if (!taskIdParam) return
+
+    if (deepLinkTask) {
+      setSelectedTask((current) =>
+        current?.id === deepLinkTask.id ? current : deepLinkTask,
+      )
+      return
+    }
+
+    if (loadStatus === 'ready') {
+      setSelectedTask((current) => (current == null ? current : null))
+    }
+  }, [taskIdParam, deepLinkTask, loadStatus, setSelectedTask])
 
   const filteredTasks = useMemo(
     () =>
@@ -866,6 +901,24 @@ export default function Tasks() {
     closeDeleteModal()
   }
 
+  function handleCloseTaskDrawer() {
+    closeDrawer()
+
+    if (!taskIdParam) return
+
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('taskId')
+    const nextSearch = nextParams.toString()
+
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : '',
+      },
+      { replace: true },
+    )
+  }
+
   if (loadStatus === 'loading') {
     return (
       <div className="tasks tasks-state">
@@ -891,6 +944,12 @@ export default function Tasks() {
 
   return (
     <div className="tasks">
+      {deepLinkUnavailable && taskIdParam ? (
+        <p className="tasks-deeplink-unavailable" role="alert">
+          Task unavailable.
+        </p>
+      ) : null}
+
       <div className="tasks-toolbar">
         <div className="tasks-toolbar__start">
           {activeView === 'table' ? (
@@ -1147,7 +1206,7 @@ export default function Tasks() {
 
       <TaskDetailDrawer
         task={selectedTask}
-        onClose={closeDrawer}
+        onClose={handleCloseTaskDrawer}
         onEdit={handleOpenEditModal}
         onDelete={openDeleteModal}
       />

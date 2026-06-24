@@ -1,4 +1,5 @@
 import Badge from './Badge'
+import ClientLinkedTasks from './ClientLinkedTasks'
 import ClientNotesTimeline from './ClientNotesTimeline'
 import Drawer from './Drawer'
 import { getClientStatusBadge, getPipelineStageBadge } from './utils/badges'
@@ -11,6 +12,7 @@ export default function ClientDetailDrawer({
   onDelete,
   onNotesChanged,
   notesRevision,
+  onOpenTask,
 }) {
   if (!client) return null
 
@@ -75,6 +77,12 @@ export default function ClientDetailDrawer({
           </dd>
         </div>
       </dl>
+
+      <ClientLinkedTasks
+        key={client.id}
+        clientId={client.id}
+        onOpenTask={onOpenTask}
+      />
 
       <ClientNotesTimeline
         key={client.id}

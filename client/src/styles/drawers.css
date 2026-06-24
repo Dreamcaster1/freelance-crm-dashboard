@@ -326,6 +326,103 @@
   background: var(--bg-subtle);
 }
 
+/* Client linked tasks */
+
+.drawer-linked-tasks {
+  margin: 28px 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.drawer-linked-tasks__title {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.drawer-linked-tasks__status {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.drawer-linked-tasks__status--error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--danger);
+}
+
+.drawer-linked-tasks__empty {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+.drawer-linked-tasks__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.drawer-linked-tasks__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  min-width: 0;
+}
+
+.drawer-linked-tasks__item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.drawer-linked-tasks__name {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.drawer-linked-tasks__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.drawer-linked-tasks__due {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.drawer-linked-tasks__view-btn {
+  flex-shrink: 0;
+}
+
 /* Client notes timeline */
 
 .drawer-client-notes {
@@ -508,6 +605,16 @@
 }
 
 @media (max-width: 480px) {
+  .drawer-linked-tasks__item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .drawer-linked-tasks__view-btn {
+    align-self: flex-start;
+    min-height: 36px;
+  }
+
   .drawer-client-notes__form-footer {
     align-items: stretch;
   }

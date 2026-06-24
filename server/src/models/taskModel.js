@@ -14,6 +14,20 @@ const TASK_COLUMNS = `
   updated_at
 `
 
+const TASK_COLUMNS_WITH_ALIAS = `
+  t.id,
+  t.workspace_id,
+  t.client_id,
+  t.client_name_snapshot,
+  t.name,
+  t.status,
+  t.priority,
+  t.due_date,
+  t.description,
+  t.created_at,
+  t.updated_at
+`
+
 export async function findTasksByWorkspace(workspaceId, status) {
   let sql = `SELECT ${TASK_COLUMNS} FROM tasks WHERE workspace_id = ?`
   const params = [workspaceId]
@@ -26,6 +40,25 @@ export async function findTasksByWorkspace(workspaceId, status) {
   sql += ' ORDER BY due_date IS NULL, due_date ASC, updated_at DESC, id DESC'
 
   const [rows] = await pool.query(sql, params)
+  return rows
+}
+
+export async function findTasksByWorkspaceClient(workspaceId, clientId) {
+  const [rows] = await pool.query(
+    `SELECT ${TASK_COLUMNS_WITH_ALIAS}
+     FROM tasks t
+     INNER JOIN clients c
+       ON c.id = t.client_id
+      AND c.workspace_id = t.workspace_id
+     WHERE t.workspace_id = ? AND t.client_id = ?
+     ORDER BY
+       CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
+       CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END ASC,
+       t.due_date ASC,
+       t.updated_at DESC,
+       t.id DESC`,
+    [workspaceId, clientId],
+  )
   return rows
 }
 
