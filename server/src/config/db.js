@@ -1,6 +1,7 @@
-import mysql from 'mysql2/promise'
+import mysql from 'mysql2'
+import mysqlPromise from 'mysql2/promise'
 
-const pool = mysql.createPool({
+export const dbOptions = {
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT) || 3306,
   user: process.env.DB_USER,
@@ -8,6 +9,10 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-})
+}
+
+const pool = mysqlPromise.createPool(dbOptions)
+
+export const sessionPool = mysql.createPool(dbOptions)
 
 export default pool
