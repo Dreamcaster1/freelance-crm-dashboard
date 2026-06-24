@@ -38,6 +38,8 @@ export default function AddTaskModal({
   onSave,
   isSaving = false,
   saveError = null,
+  initialClientId = '',
+  lockClient = false,
 }) {
   useOverlayLock(isOpen)
 
@@ -45,13 +47,15 @@ export default function AddTaskModal({
 
   return (
     <TaskModalContent
-      key={task?.id ?? 'new-task'}
+      key={task?.id ?? `new-task-${initialClientId || 'none'}-${lockClient ? 'locked' : 'open'}`}
       task={task}
       clients={clients}
       onClose={onClose}
       onSave={onSave}
       isSaving={isSaving}
       saveError={saveError}
+      initialClientId={initialClientId}
+      lockClient={lockClient}
     />
   )
 }
@@ -63,10 +67,17 @@ function TaskModalContent({
   onSave,
   isSaving,
   saveError,
+  initialClientId,
+  lockClient,
 }) {
-  const [form, setForm] = useState(() => (task ? mapTaskToForm(task) : EMPTY_FORM))
+  const [form, setForm] = useState(() =>
+    task
+      ? mapTaskToForm(task)
+      : { ...EMPTY_FORM, clientId: initialClientId ? String(initialClientId) : '' },
+  )
   const [errors, setErrors] = useState({})
   const isEditing = Boolean(task)
+  const isClientLocked = lockClient && !isEditing
   const hasLinkedClient = Boolean(
     task?.clientId && clients.some((client) => client.id === task.clientId),
   )
@@ -125,7 +136,7 @@ function TaskModalContent({
               className="field-select"
               value={form.clientId}
               onChange={(event) => updateField('clientId', event.target.value)}
-              disabled={isSaving}
+              disabled={isSaving || isClientLocked}
             >
               <option value="">No client</option>
               {task?.clientId && !hasLinkedClient ? (

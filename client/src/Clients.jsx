@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import AddClientModal from './AddClientModal'
+import AddTaskModal from './AddTaskModal'
 import * as clientsApi from './api/clients.js'
+import * as tasksApi from './api/tasks.js'
 import { ApiError } from './api/client.js'
 import useConfirmDeleteState from './hooks/useConfirmDeleteState'
 import useEditModalState from './hooks/useEditModalState'
@@ -22,6 +24,7 @@ import {
   mapClientFromApi,
   mapClientsFromApi,
 } from './utils/clientMapper'
+import { mapTaskFormToApiPayload } from './utils/taskMapper'
 import { getClientStatusBadge, CLIENT_STATUS_OPTIONS, PIPELINE_STAGE_OPTIONS } from './utils/badges'
 import { formatCurrency, getInitials } from './utils/format'
 
@@ -148,6 +151,10 @@ export default function Clients() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
   const [notesRevision, setNotesRevision] = useState(0)
+  const [tasksRevision, setTasksRevision] = useState(0)
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
+  const [isSavingTask, setIsSavingTask] = useState(false)
+  const [taskSaveError, setTaskSaveError] = useState(null)
   const {
     isOpen: isModalOpen,
     editingItem: editingClient,
@@ -168,6 +175,7 @@ export default function Clients() {
   } = useSelectionState()
   const saveInFlightRef = useRef(false)
   const deleteInFlightRef = useRef(false)
+  const taskSaveInFlightRef = useRef(false)
 
   const handleNotesChanged = useCallback(() => {
     setNotesRevision((current) => current + 1)
@@ -179,6 +187,11 @@ export default function Clients() {
     },
     [navigate],
   )
+
+  const handleOpenCreateTask = useCallback(() => {
+    setTaskSaveError(null)
+    setIsTaskModalOpen(true)
+  }, [])
 
   const fetchClients = useCallback(async () => {
     setLoadStatus('loading')
@@ -276,6 +289,28 @@ export default function Clients() {
     }
   }
 
+  async function handleSaveTask(form) {
+    if (taskSaveInFlightRef.current) return
+    taskSaveInFlightRef.current = true
+    setIsSavingTask(true)
+    setTaskSaveError(null)
+
+    try {
+      await tasksApi.createTask(mapTaskFormToApiPayload(form))
+      setIsTaskModalOpen(false)
+      setTasksRevision((current) => current + 1)
+    } catch (err) {
+      setTaskSaveError(
+        err instanceof ApiError
+          ? err.message
+          : 'Unable to save task. Try again.',
+      )
+    } finally {
+      taskSaveInFlightRef.current = false
+      setIsSavingTask(false)
+    }
+  }
+
   async function confirmDeleteClient() {
     if (!deletingClient) return
     if (deleteInFlightRef.current) return
@@ -309,6 +344,20 @@ export default function Clients() {
     if (isDeleting) return
     setDeleteError(null)
     closeDeleteModal()
+  }
+
+  function handleCloseTaskModal() {
+    if (isSavingTask) return
+    setTaskSaveError(null)
+    setIsTaskModalOpen(false)
+  }
+
+  function handleCloseClientDrawer() {
+    if (isTaskModalOpen && !isSavingTask) {
+      setTaskSaveError(null)
+      setIsTaskModalOpen(false)
+    }
+    closeDrawer()
   }
 
   if (loadStatus === 'loading') {
@@ -525,14 +574,27 @@ export default function Clients() {
         saveError={saveError}
       />
 
+      <AddTaskModal
+        isOpen={isTaskModalOpen}
+        clients={clients}
+        onClose={handleCloseTaskModal}
+        onSave={handleSaveTask}
+        isSaving={isSavingTask}
+        saveError={taskSaveError}
+        initialClientId={selectedClient?.id ?? ''}
+        lockClient
+      />
+
       <ClientDetailDrawer
         client={selectedClient}
-        onClose={closeDrawer}
+        onClose={handleCloseClientDrawer}
         onEdit={handleOpenEditModal}
         onDelete={openDeleteModal}
         onNotesChanged={handleNotesChanged}
         notesRevision={notesRevision}
         onOpenTask={handleOpenTask}
+        onCreateTask={handleOpenCreateTask}
+        tasksRevision={tasksRevision}
       />
 
       <ConfirmModal

@@ -13,6 +13,8 @@ export default function ClientDetailDrawer({
   onNotesChanged,
   notesRevision,
   onOpenTask,
+  onCreateTask,
+  tasksRevision,
 }) {
   if (!client) return null
 
@@ -82,6 +84,8 @@ export default function ClientDetailDrawer({
         key={client.id}
         clientId={client.id}
         onOpenTask={onOpenTask}
+        onCreateTask={onCreateTask}
+        tasksRevision={tasksRevision}
       />
 
       <ClientNotesTimeline

@@ -334,8 +334,16 @@
   border-top: 1px solid var(--border);
 }
 
+.drawer-linked-tasks__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
 .drawer-linked-tasks__title {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -605,6 +613,11 @@
 }
 
 @media (max-width: 480px) {
+  .drawer-linked-tasks__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .drawer-linked-tasks__item {
     flex-direction: column;
     align-items: stretch;

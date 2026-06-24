@@ -11,7 +11,12 @@ function getTasksLoadError(err) {
     : 'Unable to load linked tasks. Try again.'
 }
 
-export default function ClientLinkedTasks({ clientId, onOpenTask }) {
+export default function ClientLinkedTasks({
+  clientId,
+  onOpenTask,
+  onCreateTask,
+  tasksRevision,
+}) {
   const [tasks, setTasks] = useState([])
   const [loadStatus, setLoadStatus] = useState('loading')
   const [loadError, setLoadError] = useState(null)
@@ -59,11 +64,20 @@ export default function ClientLinkedTasks({ clientId, onOpenTask }) {
     return () => {
       cancelled = true
     }
-  }, [clientId])
+  }, [clientId, tasksRevision])
 
   return (
     <section className="drawer-linked-tasks" aria-label="Linked tasks">
-      <h3 className="drawer-linked-tasks__title">Linked tasks</h3>
+      <header className="drawer-linked-tasks__header">
+        <h3 className="drawer-linked-tasks__title">Linked tasks</h3>
+        <button
+          type="button"
+          className="btn btn--secondary btn--sm"
+          onClick={onCreateTask}
+        >
+          Create task
+        </button>
+      </header>
 
       {loadStatus === 'loading' ? (
         <p className="drawer-linked-tasks__status">Loading linked tasks…</p>
