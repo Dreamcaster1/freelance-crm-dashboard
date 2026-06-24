@@ -40,6 +40,7 @@ export function ModalBody({ children }) {
 export function ModalFooter({
   onClose,
   submitLabel = 'Save',
+  submittingLabel = 'Saving…',
   isSubmitting = false,
 }) {
   return (
@@ -57,7 +58,7 @@ export function ModalFooter({
         className="btn btn--primary"
         disabled={isSubmitting}
       >
-        {isSubmitting ? 'Saving…' : submitLabel}
+        {isSubmitting ? submittingLabel : submitLabel}
       </button>
     </footer>
   )

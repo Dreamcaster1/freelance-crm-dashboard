@@ -155,7 +155,8 @@
   }
 
   .clients-toolbar,
-  .tasks-toolbar {
+  .tasks-toolbar,
+  .invoices-toolbar {
     flex-direction: column;
     align-items: stretch;
   }

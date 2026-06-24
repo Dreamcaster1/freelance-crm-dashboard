@@ -12,6 +12,7 @@ export default function Drawer({
   closeLabel,
   header,
   children,
+  footer,
 }) {
   useOverlayLock(true)
 
@@ -52,22 +53,26 @@ export default function Drawer({
 
         <div className="drawer__body">{children}</div>
 
-        <footer className="drawer__footer">
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => onEdit(item)}
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            className="btn btn--danger"
-            onClick={() => onDelete(item)}
-          >
-            Delete
-          </button>
-        </footer>
+        {footer !== undefined ? (
+          footer
+        ) : (
+          <footer className="drawer__footer">
+            <button
+              type="button"
+              className="btn btn--secondary"
+              onClick={() => onEdit(item)}
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              className="btn btn--danger"
+              onClick={() => onDelete(item)}
+            >
+              Delete
+            </button>
+          </footer>
+        )}
       </aside>
     </div>
   )

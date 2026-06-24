@@ -5,6 +5,8 @@ export default function ConfirmModal({
   title,
   description,
   confirmLabel = 'Delete',
+  confirmingLabel = 'Deleting…',
+  confirmClassName = 'btn--destructive',
   error = null,
   isConfirming = false,
   onClose,
@@ -45,11 +47,11 @@ export default function ConfirmModal({
           </button>
           <button
             type="button"
-            className="btn btn--destructive"
+            className={`btn ${confirmClassName}`}
             onClick={onConfirm}
             disabled={isConfirming}
           >
-            {isConfirming ? 'Deleting…' : confirmLabel}
+            {isConfirming ? confirmingLabel : confirmLabel}
           </button>
         </footer>
       </div>

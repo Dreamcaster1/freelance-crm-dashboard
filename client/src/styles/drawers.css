@@ -274,6 +274,18 @@
   background: var(--bg-subtle);
 }
 
+.drawer__footer--actions {
+  flex-wrap: wrap;
+}
+
+.drawer__subtitle {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
 .drawer__task-check {
   flex-shrink: 0;
   width: 16px;
