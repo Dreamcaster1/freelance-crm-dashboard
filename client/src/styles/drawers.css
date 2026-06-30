@@ -443,6 +443,127 @@
   flex-shrink: 0;
 }
 
+/* Client linked invoices */
+
+.drawer-linked-invoices {
+  margin: 28px 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.drawer-linked-invoices__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.drawer-linked-invoices__title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.drawer-linked-invoices__status {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.drawer-linked-invoices__status--error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--danger);
+}
+
+.drawer-linked-invoices__empty {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+.drawer-linked-invoices__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.drawer-linked-invoices__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  min-width: 0;
+}
+
+.drawer-linked-invoices__item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.drawer-linked-invoices__number {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.drawer-linked-invoices__title-text {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.drawer-linked-invoices__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.drawer-linked-invoices__amount {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.drawer-linked-invoices__due {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.drawer-linked-invoices__view-btn {
+  flex-shrink: 0;
+}
+
 /* Client notes timeline */
 
 .drawer-client-notes {
@@ -636,6 +757,21 @@
   }
 
   .drawer-linked-tasks__view-btn {
+    align-self: flex-start;
+    min-height: 36px;
+  }
+
+  .drawer-linked-invoices__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .drawer-linked-invoices__item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .drawer-linked-invoices__view-btn {
     align-self: flex-start;
     min-height: 36px;
   }

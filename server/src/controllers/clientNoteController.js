@@ -2,6 +2,7 @@ import { findClientById } from '../models/clientModel.js'
 import {
   createClientNote,
   deleteClientNote,
+  findClientNoteById,
   findClientNotesByWorkspace,
   findClientNotesByWorkspaceClient,
 } from '../models/clientNoteModel.js'
@@ -11,6 +12,7 @@ import {
   mapWorkspaceClientNoteResponses,
 } from '../utils/clientNoteMapper.js'
 import { assertJsonObject } from '../utils/validation.js'
+import { recordActivityEvent } from '../utils/activityRecorder.js'
 
 const MAX_NOTE_CONTENT_LENGTH = 2000
 
@@ -109,6 +111,17 @@ export async function createClientNoteHandler(req, res) {
     validation.data.content,
   )
 
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId: authorUserId,
+    entityType: 'client_note',
+    entityId: note.id,
+    eventType: 'client_note.added',
+    title: `Note added: ${client.company}`,
+    description: note.content.slice(0, 140),
+    metadata: { clientId: client.id, clientName: client.company },
+  })
+
   return res.status(201).json({
     ok: true,
     note: mapClientNoteResponse(note),
@@ -117,6 +130,7 @@ export async function createClientNoteHandler(req, res) {
 
 export async function deleteClientNoteHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const clientId = parseClientId(req.params.id)
   const noteId = parseNoteId(req.params.noteId)
 
@@ -128,10 +142,31 @@ export async function deleteClientNoteHandler(req, res) {
     return res.status(400).json({ ok: false, error: 'Invalid note id.' })
   }
 
+  const client = await findClientById(workspaceId, clientId)
+  if (!client) {
+    return res.status(404).json({ ok: false, error: 'Client not found.' })
+  }
+
+  const existingNote = await findClientNoteById(workspaceId, clientId, noteId)
+  if (!existingNote) {
+    return res.status(404).json({ ok: false, error: 'Note not found.' })
+  }
+
   const deleted = await deleteClientNote(workspaceId, clientId, noteId)
   if (!deleted) {
     return res.status(404).json({ ok: false, error: 'Note not found.' })
   }
+
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId,
+    entityType: 'client_note',
+    entityId: noteId,
+    eventType: 'client_note.deleted',
+    title: `Note deleted: ${client.company}`,
+    description: existingNote.content.slice(0, 140),
+    metadata: { clientId: client.id, clientName: client.company },
+  })
 
   return res.json({ ok: true })
 }

@@ -18,6 +18,7 @@ router.delete(
   asyncHandler(clientNoteController.deleteClientNoteHandler),
 )
 router.get('/:id/tasks', asyncHandler(clientController.listClientTasks))
+router.get('/:id/invoices', asyncHandler(clientController.listClientInvoices))
 router.get('/:id', asyncHandler(clientController.getClient))
 router.patch('/:id', asyncHandler(clientController.updateClientHandler))
 router.delete('/:id', asyncHandler(clientController.deleteClientHandler))

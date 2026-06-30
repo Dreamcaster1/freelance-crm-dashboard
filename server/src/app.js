@@ -1,5 +1,6 @@
 import cors from 'cors'
 import express from 'express'
+import activityRoutes from './routes/activityRoutes.js'
 import sessionMiddleware from './config/session.js'
 import { errorMiddleware } from './middleware/errorMiddleware.js'
 import authRoutes from './routes/authRoutes.js'
@@ -21,6 +22,7 @@ app.use(sessionMiddleware)
 
 app.use('/api/health', healthRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api/activity', activityRoutes)
 app.use('/api/clients', clientRoutes)
 app.use('/api/invoices', invoiceRoutes)
 app.use('/api/tasks', taskRoutes)

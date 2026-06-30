@@ -31,6 +31,21 @@ export async function findInvoicesByWorkspace(workspaceId) {
   return rows
 }
 
+export async function findInvoicesByWorkspaceClient(workspaceId, clientId) {
+  const [rows] = await pool.query(
+    `SELECT ${INVOICE_COLUMNS}
+     FROM invoices i
+     INNER JOIN clients c
+       ON c.id = i.client_id
+      AND c.workspace_id = i.workspace_id
+     WHERE i.workspace_id = ?
+       AND i.client_id = ?
+     ORDER BY i.updated_at DESC, i.id DESC`,
+    [workspaceId, clientId],
+  )
+  return rows
+}
+
 export async function findInvoiceById(workspaceId, invoiceId) {
   const [rows] = await pool.query(
     `SELECT ${INVOICE_COLUMNS}

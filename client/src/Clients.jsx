@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import AddClientModal from './AddClientModal'
+import AddInvoiceModal from './AddInvoiceModal'
 import AddTaskModal from './AddTaskModal'
 import * as clientsApi from './api/clients.js'
+import * as invoicesApi from './api/invoices.js'
 import * as tasksApi from './api/tasks.js'
 import { ApiError } from './api/client.js'
 import useConfirmDeleteState from './hooks/useConfirmDeleteState'
@@ -25,6 +27,7 @@ import {
   mapClientsFromApi,
 } from './utils/clientMapper'
 import { mapTaskFormToApiPayload } from './utils/taskMapper'
+import { mapInvoiceFormToApiPayload } from './utils/invoiceMapper'
 import { getClientStatusBadge, CLIENT_STATUS_OPTIONS, PIPELINE_STAGE_OPTIONS } from './utils/badges'
 import { formatCurrency, getInitials } from './utils/format'
 
@@ -152,9 +155,13 @@ export default function Clients() {
   const [deleteError, setDeleteError] = useState(null)
   const [notesRevision, setNotesRevision] = useState(0)
   const [tasksRevision, setTasksRevision] = useState(0)
+  const [invoicesRevision, setInvoicesRevision] = useState(0)
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
   const [isSavingTask, setIsSavingTask] = useState(false)
+  const [isSavingInvoice, setIsSavingInvoice] = useState(false)
   const [taskSaveError, setTaskSaveError] = useState(null)
+  const [invoiceSaveError, setInvoiceSaveError] = useState(null)
   const {
     isOpen: isModalOpen,
     editingItem: editingClient,
@@ -176,6 +183,7 @@ export default function Clients() {
   const saveInFlightRef = useRef(false)
   const deleteInFlightRef = useRef(false)
   const taskSaveInFlightRef = useRef(false)
+  const invoiceSaveInFlightRef = useRef(false)
 
   const handleNotesChanged = useCallback(() => {
     setNotesRevision((current) => current + 1)
@@ -188,9 +196,21 @@ export default function Clients() {
     [navigate],
   )
 
+  const handleOpenInvoice = useCallback(
+    (invoiceId) => {
+      navigate(`/invoices?invoiceId=${invoiceId}`)
+    },
+    [navigate],
+  )
+
   const handleOpenCreateTask = useCallback(() => {
     setTaskSaveError(null)
     setIsTaskModalOpen(true)
+  }, [])
+
+  const handleOpenCreateInvoice = useCallback(() => {
+    setInvoiceSaveError(null)
+    setIsInvoiceModalOpen(true)
   }, [])
 
   const fetchClients = useCallback(async () => {
@@ -311,6 +331,28 @@ export default function Clients() {
     }
   }
 
+  async function handleSaveInvoice(form) {
+    if (invoiceSaveInFlightRef.current) return
+    invoiceSaveInFlightRef.current = true
+    setIsSavingInvoice(true)
+    setInvoiceSaveError(null)
+
+    try {
+      await invoicesApi.createInvoice(mapInvoiceFormToApiPayload(form))
+      setIsInvoiceModalOpen(false)
+      setInvoicesRevision((current) => current + 1)
+    } catch (err) {
+      setInvoiceSaveError(
+        err instanceof ApiError
+          ? err.message
+          : 'Unable to create invoice. Try again.',
+      )
+    } finally {
+      invoiceSaveInFlightRef.current = false
+      setIsSavingInvoice(false)
+    }
+  }
+
   async function confirmDeleteClient() {
     if (!deletingClient) return
     if (deleteInFlightRef.current) return
@@ -350,6 +392,12 @@ export default function Clients() {
     if (isSavingTask) return
     setTaskSaveError(null)
     setIsTaskModalOpen(false)
+  }
+
+  function handleCloseInvoiceModal() {
+    if (isSavingInvoice) return
+    setInvoiceSaveError(null)
+    setIsInvoiceModalOpen(false)
   }
 
   function handleCloseClientDrawer() {
@@ -585,6 +633,17 @@ export default function Clients() {
         lockClient
       />
 
+      <AddInvoiceModal
+        isOpen={isInvoiceModalOpen}
+        clients={clients}
+        onClose={handleCloseInvoiceModal}
+        onSubmit={handleSaveInvoice}
+        isSubmitting={isSavingInvoice}
+        serverError={invoiceSaveError}
+        initialClientId={selectedClient?.id ?? ''}
+        lockClient
+      />
+
       <ClientDetailDrawer
         client={selectedClient}
         onClose={handleCloseClientDrawer}
@@ -595,6 +654,9 @@ export default function Clients() {
         onOpenTask={handleOpenTask}
         onCreateTask={handleOpenCreateTask}
         tasksRevision={tasksRevision}
+        onOpenInvoice={handleOpenInvoice}
+        onCreateInvoice={handleOpenCreateInvoice}
+        invoicesRevision={invoicesRevision}
       />
 
       <ConfirmModal

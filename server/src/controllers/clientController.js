@@ -5,17 +5,20 @@ import {
   findClientsByWorkspace,
   updateClient,
 } from '../models/clientModel.js'
+import { findInvoicesByWorkspaceClient } from '../models/invoiceModel.js'
 import { findTasksByWorkspaceClient } from '../models/taskModel.js'
 import {
   mapClientResponse,
   mapClientResponses,
 } from '../utils/clientMapper.js'
+import { mapInvoiceResponses } from '../utils/invoiceMapper.js'
 import { mapTaskResponses } from '../utils/taskMapper.js'
 import {
   assertJsonObject,
   parseDateTimeOrNull,
   parseProjectValueCents,
 } from '../utils/validation.js'
+import { recordActivityEvent } from '../utils/activityRecorder.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const VALID_STATUSES = ['active', 'lead', 'on-hold', 'at-risk', 'inactive']
@@ -26,6 +29,28 @@ const VALID_PIPELINE_STAGES = [
   'awaiting-payment',
   'completed',
 ]
+
+const CLIENT_FIELD_LABELS = {
+  company: 'company',
+  contactName: 'contact',
+  email: 'email',
+  status: 'status',
+  pipelineStage: 'pipeline stage',
+  projectValueCents: 'project value',
+  lastActivityAt: 'last activity',
+}
+
+function summarizeUpdatedClientFields(fields) {
+  const labels = Object.keys(fields)
+    .map((field) => CLIENT_FIELD_LABELS[field])
+    .filter(Boolean)
+
+  if (labels.length === 0) {
+    return null
+  }
+
+  return `Updated ${labels.join(', ')}.`
+}
 
 function parseClientId(rawId) {
   const clientId = Number(rawId)
@@ -285,8 +310,30 @@ export async function listClientTasks(req, res) {
   })
 }
 
+export async function listClientInvoices(req, res) {
+  const workspaceId = req.session.workspaceId
+  const clientId = parseClientId(req.params.id)
+
+  if (!clientId) {
+    return res.status(400).json({ ok: false, error: 'Invalid client id.' })
+  }
+
+  const client = await findClientById(workspaceId, clientId)
+  if (!client) {
+    return res.status(404).json({ ok: false, error: 'Client not found.' })
+  }
+
+  const invoices = await findInvoicesByWorkspaceClient(workspaceId, clientId)
+
+  return res.json({
+    ok: true,
+    invoices: mapInvoiceResponses(invoices),
+  })
+}
+
 export async function createClientHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const validation = validateCreateBody(req.body)
 
   if (validation.error) {
@@ -294,6 +341,17 @@ export async function createClientHandler(req, res) {
   }
 
   const client = await createClient(workspaceId, validation.data)
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId,
+    entityType: 'client',
+    entityId: client.id,
+    eventType: 'client.created',
+    title: `Client created: ${client.company}`,
+    description: client.contact_name
+      ? `Primary contact: ${client.contact_name}`
+      : null,
+  })
 
   return res.status(201).json({
     ok: true,
@@ -303,6 +361,7 @@ export async function createClientHandler(req, res) {
 
 export async function updateClientHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const clientId = parseClientId(req.params.id)
 
   if (!clientId) {
@@ -327,6 +386,35 @@ export async function updateClientHandler(req, res) {
     return res.status(404).json({ ok: false, error: 'Client not found.' })
   }
 
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId,
+    entityType: 'client',
+    entityId: client.id,
+    eventType: 'client.updated',
+    title: `Client updated: ${client.company}`,
+    description: summarizeUpdatedClientFields(validation.data),
+  })
+
+  if (
+    validation.data.pipelineStage !== undefined &&
+    existingClient.pipeline_stage !== client.pipeline_stage
+  ) {
+    await recordActivityEvent({
+      workspaceId,
+      actorUserId,
+      entityType: 'client',
+      entityId: client.id,
+      eventType: 'pipeline.stage_changed',
+      title: `Pipeline stage changed: ${client.company}`,
+      description: `${existingClient.pipeline_stage} -> ${client.pipeline_stage}`,
+      metadata: {
+        fromStage: existingClient.pipeline_stage,
+        toStage: client.pipeline_stage,
+      },
+    })
+  }
+
   return res.json({
     ok: true,
     client: mapClientResponse(client),
@@ -335,10 +423,16 @@ export async function updateClientHandler(req, res) {
 
 export async function deleteClientHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const clientId = parseClientId(req.params.id)
 
   if (!clientId) {
     return res.status(400).json({ ok: false, error: 'Invalid client id.' })
+  }
+
+  const existingClient = await findClientById(workspaceId, clientId)
+  if (!existingClient) {
+    return res.status(404).json({ ok: false, error: 'Client not found.' })
   }
 
   const deleted = await deleteClient(workspaceId, clientId)
@@ -346,6 +440,15 @@ export async function deleteClientHandler(req, res) {
   if (!deleted) {
     return res.status(404).json({ ok: false, error: 'Client not found.' })
   }
+
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId,
+    entityType: 'client',
+    entityId: clientId,
+    eventType: 'client.deleted',
+    title: `Client deleted: ${existingClient.company}`,
+  })
 
   return res.json({ ok: true })
 }

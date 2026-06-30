@@ -6,11 +6,33 @@ import {
   findTasksByWorkspace,
   updateTask,
 } from '../models/taskModel.js'
+import { recordActivityEvent } from '../utils/activityRecorder.js'
 import { mapTaskResponse, mapTaskResponses } from '../utils/taskMapper.js'
 import { assertJsonObject, validateCalendarDate } from '../utils/validation.js'
 
 const VALID_STATUSES = ['in-progress', 'pending', 'completed']
 const VALID_PRIORITIES = ['high', 'medium', 'low']
+const TASK_FIELD_LABELS = {
+  clientId: 'client',
+  clientNameSnapshot: 'client snapshot',
+  name: 'name',
+  status: 'status',
+  priority: 'priority',
+  dueDate: 'due date',
+  description: 'description',
+}
+
+function summarizeTaskUpdate(fields) {
+  const labels = Object.keys(fields)
+    .map((field) => TASK_FIELD_LABELS[field])
+    .filter(Boolean)
+
+  if (labels.length === 0) {
+    return null
+  }
+
+  return `Updated ${labels.join(', ')}.`
+}
 
 function parseTaskId(rawId) {
   const taskId = Number(rawId)
@@ -241,6 +263,7 @@ export async function getTask(req, res) {
 
 export async function createTaskHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const validation = validateCreateBody(req.body)
 
   if (validation.error) {
@@ -268,6 +291,18 @@ export async function createTaskHandler(req, res) {
     description: validation.data.description,
   })
 
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId,
+    entityType: 'task',
+    entityId: task.id,
+    eventType: 'task.created',
+    title: `Task created: ${task.name}`,
+    description: task.client_name_snapshot
+      ? `Client: ${task.client_name_snapshot}`
+      : 'No client linked',
+  })
+
   return res.status(201).json({
     ok: true,
     task: mapTaskResponse(task),
@@ -276,6 +311,7 @@ export async function createTaskHandler(req, res) {
 
 export async function updateTaskHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const taskId = parseTaskId(req.params.id)
 
   if (!taskId) {
@@ -319,6 +355,35 @@ export async function updateTaskHandler(req, res) {
     return res.status(404).json({ ok: false, error: 'Task not found.' })
   }
 
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId,
+    entityType: 'task',
+    entityId: task.id,
+    eventType: 'task.updated',
+    title: `Task updated: ${task.name}`,
+    description: summarizeTaskUpdate(updateFields),
+  })
+
+  if (
+    updateFields.status !== undefined &&
+    existingTask.status !== task.status
+  ) {
+    await recordActivityEvent({
+      workspaceId,
+      actorUserId,
+      entityType: 'task',
+      entityId: task.id,
+      eventType: 'task.status_changed',
+      title: `Task status changed: ${task.name}`,
+      description: `${existingTask.status} -> ${task.status}`,
+      metadata: {
+        fromStatus: existingTask.status,
+        toStatus: task.status,
+      },
+    })
+  }
+
   return res.json({
     ok: true,
     task: mapTaskResponse(task),
@@ -327,10 +392,16 @@ export async function updateTaskHandler(req, res) {
 
 export async function deleteTaskHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const taskId = parseTaskId(req.params.id)
 
   if (!taskId) {
     return res.status(400).json({ ok: false, error: 'Invalid task id.' })
+  }
+
+  const existingTask = await findTaskById(workspaceId, taskId)
+  if (!existingTask) {
+    return res.status(404).json({ ok: false, error: 'Task not found.' })
   }
 
   const deleted = await deleteTask(workspaceId, taskId)
@@ -338,6 +409,18 @@ export async function deleteTaskHandler(req, res) {
   if (!deleted) {
     return res.status(404).json({ ok: false, error: 'Task not found.' })
   }
+
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId,
+    entityType: 'task',
+    entityId: taskId,
+    eventType: 'task.deleted',
+    title: `Task deleted: ${existingTask.name}`,
+    description: existingTask.client_name_snapshot
+      ? `Client: ${existingTask.client_name_snapshot}`
+      : null,
+  })
 
   return res.json({ ok: true })
 }

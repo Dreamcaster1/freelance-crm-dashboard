@@ -1,4 +1,5 @@
 import Badge from './Badge'
+import ClientLinkedInvoices from './ClientLinkedInvoices'
 import ClientLinkedTasks from './ClientLinkedTasks'
 import ClientNotesTimeline from './ClientNotesTimeline'
 import Drawer from './Drawer'
@@ -15,6 +16,9 @@ export default function ClientDetailDrawer({
   onOpenTask,
   onCreateTask,
   tasksRevision,
+  onOpenInvoice,
+  onCreateInvoice,
+  invoicesRevision,
 }) {
   if (!client) return null
 
@@ -86,6 +90,14 @@ export default function ClientDetailDrawer({
         onOpenTask={onOpenTask}
         onCreateTask={onCreateTask}
         tasksRevision={tasksRevision}
+      />
+
+      <ClientLinkedInvoices
+        key={client.id}
+        clientId={client.id}
+        onOpenInvoice={onOpenInvoice}
+        onCreateInvoice={onCreateInvoice}
+        invoicesRevision={invoicesRevision}
       />
 
       <ClientNotesTimeline

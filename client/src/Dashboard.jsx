@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import * as activityApi from './api/activity.js'
 import * as clientsApi from './api/clients.js'
 import * as tasksApi from './api/tasks.js'
 import { ApiError } from './api/client.js'
 import Badge from './Badge'
 import {
+  ActivityIcon,
   IconActivity,
   IconBriefcase,
   IconCalendar,
-  IconCheck,
   IconCheckSquare,
   IconUsers,
 } from './icons'
@@ -137,63 +138,62 @@ function computeUpcoming(tasks) {
     .slice(0, 5)
 }
 
-const UPDATE_THRESHOLD_MS = 2 * 60 * 1000
+function toEventLabel(eventType) {
+  if (!eventType) return 'Event'
 
-function computeUpdates(clients, tasks) {
-  const items = []
-
-  for (const c of clients) {
-    const createdMs = new Date(c.createdAt).getTime()
-    const updatedMs = new Date(c.updatedAt).getTime()
-    const isUpdated =
-      Number.isFinite(createdMs) &&
-      Number.isFinite(updatedMs) &&
-      updatedMs - createdMs > UPDATE_THRESHOLD_MS
-
-    items.push({
-      key: `c-${c.id}`,
-      kind: 'client',
-      label: isUpdated ? 'Client updated' : 'Client added',
-      name: c.company,
-      sub: null,
-      ts: c.updatedAt,
-    })
-  }
-
-  for (const t of tasks) {
-    const createdMs = new Date(t.createdAt).getTime()
-    const updatedMs = new Date(t.updatedAt).getTime()
-    const isUpdated =
-      Number.isFinite(createdMs) &&
-      Number.isFinite(updatedMs) &&
-      updatedMs - createdMs > UPDATE_THRESHOLD_MS
-
-    items.push({
-      key: `t-${t.id}`,
-      kind: 'task',
-      label: isUpdated ? 'Task updated' : 'Task added',
-      name: t.name,
-      sub: t.clientNameSnapshot ?? null,
-      ts: t.updatedAt,
-    })
-  }
-
-  items.sort((a, b) => {
-    const aMs = new Date(a.ts).getTime()
-    const bMs = new Date(b.ts).getTime()
-    if (!Number.isFinite(aMs) && !Number.isFinite(bMs)) return 0
-    if (!Number.isFinite(aMs)) return 1
-    if (!Number.isFinite(bMs)) return -1
-    return bMs - aMs
-  })
-
-  return items.slice(0, 5)
+  const [, action = eventType] = eventType.split('.')
+  return action
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
 }
 
-function getUpdateBadge(label) {
-  return label.includes('updated')
-    ? { label, variant: 'info' }
-    : { label, variant: 'neutral' }
+function getActivityBadge(eventType) {
+  if (!eventType) {
+    return { label: 'Event', variant: 'neutral' }
+  }
+
+  if (eventType.includes('deleted')) {
+    return { label: toEventLabel(eventType), variant: 'danger' }
+  }
+
+  if (
+    eventType.includes('paid') ||
+    eventType.includes('completed') ||
+    eventType.includes('sent')
+  ) {
+    return { label: toEventLabel(eventType), variant: 'success' }
+  }
+
+  if (eventType.includes('updated') || eventType.includes('changed')) {
+    return { label: toEventLabel(eventType), variant: 'info' }
+  }
+
+  return { label: toEventLabel(eventType), variant: 'neutral' }
+}
+
+function toActivityIconType(entityType) {
+  if (entityType === 'invoice') return 'invoice'
+  if (entityType === 'task') return 'task'
+  if (entityType === 'client_note') return 'message'
+  if (entityType === 'client') return 'project'
+  return 'project'
+}
+
+function getActivitySubtitle(item) {
+  if (item.description) {
+    return item.description
+  }
+
+  const entityLabel = item.entityType
+    ? item.entityType.replace('_', ' ')
+    : 'workspace'
+
+  if (item.entityId != null) {
+    return `${entityLabel} #${item.entityId}`
+  }
+
+  return entityLabel
 }
 
 const TASK_STATUS_INSIGHT_ORDER = [
@@ -551,7 +551,7 @@ function DashboardSkeleton() {
 
 // ── Panels ────────────────────────────────────────────────────────────────
 
-function RecentUpdatesPanel({ updates }) {
+function RecentUpdatesPanel({ updates, loadStatus, loadError, onRetry }) {
   const navigate = useNavigate()
 
   return (
@@ -564,20 +564,41 @@ function RecentUpdatesPanel({ updates }) {
           <div>
             <h2 className="dashboard-panel__title">Recent updates</h2>
             <p className="dashboard-panel__subtitle">
-              Recent changes to clients and tasks
+              Recent workspace activity
             </p>
           </div>
         </div>
         <span className="dashboard-panel__meta">
-          {updates.length > 0 ? `${updates.length} records` : ''}
+          {loadStatus === 'ready' && updates.length > 0 ? `${updates.length} records` : ''}
         </span>
       </header>
 
-      {updates.length === 0 ? (
+      {loadStatus === 'loading' ? (
+        <div className="dashboard-panel__empty">
+          <p className="dashboard-panel__empty-title">Loading activity…</p>
+        </div>
+      ) : null}
+
+      {loadStatus === 'error' ? (
+        <div className="dashboard-panel__empty">
+          <p className="dashboard-panel__empty-title" role="alert">
+            {loadError}
+          </p>
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            onClick={onRetry}
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
+
+      {loadStatus === 'ready' && updates.length === 0 ? (
         <div className="dashboard-panel__empty">
           <p className="dashboard-panel__empty-title">No activity yet</p>
           <p className="dashboard-panel__empty-hint">
-            Add your first client or task to get started.
+            Create or update a client, task, note, or invoice to populate this feed.
           </p>
           <button
             type="button"
@@ -587,29 +608,29 @@ function RecentUpdatesPanel({ updates }) {
             Add client
           </button>
         </div>
-      ) : (
+      ) : null}
+
+      {loadStatus === 'ready' && updates.length > 0 ? (
         <ul className="activity-list">
           {updates.map((item) => (
-            <li key={item.key} className="activity-item">
-              <span className="activity-item__icon">
-                {item.kind === 'client' ? <IconUsers /> : <IconCheck />}
+            <li key={item.id} className="activity-item">
+              <span className={`activity-item__icon activity-item__icon--${toActivityIconType(item.entityType)}`}>
+                <ActivityIcon type={toActivityIconType(item.entityType)} />
               </span>
               <div className="activity-item__body">
-                <span className="activity-item__title">{item.name}</span>
-                {item.sub ? (
-                  <span className="activity-item__client">{item.sub}</span>
-                ) : null}
+                <span className="activity-item__title">{item.title}</span>
+                <span className="activity-item__client">{getActivitySubtitle(item)}</span>
               </div>
               <div className="activity-item__aside">
-                <Badge {...getUpdateBadge(item.label)} />
+                <Badge {...getActivityBadge(item.eventType)} />
                 <time className="activity-item__time">
-                  {formatRelativeActivity(item.ts)}
+                  {formatRelativeActivity(item.createdAt)}
                 </time>
               </div>
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
     </article>
   )
 }
@@ -686,6 +707,12 @@ function getDashboardLoadError(err) {
     : 'Unable to load dashboard data. Try again.'
 }
 
+function getActivityLoadError(err) {
+  return err instanceof ApiError
+    ? err.message
+    : 'Unable to load activity feed. Try again.'
+}
+
 async function requestDashboardData() {
   const [clientsData, tasksData] = await Promise.all([
     clientsApi.listClients(),
@@ -698,11 +725,19 @@ async function requestDashboardData() {
   }
 }
 
+async function requestRecentActivity() {
+  const data = await activityApi.listRecentActivity(10)
+  return data.events ?? []
+}
+
 export default function Dashboard() {
   const [loadStatus, setLoadStatus] = useState('loading')
   const [loadError, setLoadError] = useState(null)
   const [clients, setClients] = useState([])
   const [tasks, setTasks] = useState([])
+  const [activityStatus, setActivityStatus] = useState('loading')
+  const [activityError, setActivityError] = useState(null)
+  const [activityEvents, setActivityEvents] = useState([])
 
   const fetchData = useCallback(async () => {
     setLoadStatus('loading')
@@ -719,8 +754,29 @@ export default function Dashboard() {
     }
   }, [])
 
+  const fetchActivity = useCallback(async () => {
+    setActivityStatus('loading')
+    setActivityError(null)
+
+    try {
+      const events = await requestRecentActivity()
+      setActivityEvents(events)
+      setActivityStatus('ready')
+    } catch (err) {
+      setActivityEvents([])
+      setActivityStatus('error')
+      setActivityError(getActivityLoadError(err))
+    }
+  }, [])
+
+  const handleRetryAll = useCallback(() => {
+    void fetchData()
+    void fetchActivity()
+  }, [fetchData, fetchActivity])
+
   useEffect(() => {
     let cancelled = false
+    let activityCancelled = false
 
     requestDashboardData()
       .then(({ clients: nextClients, tasks: nextTasks }) => {
@@ -735,18 +791,28 @@ export default function Dashboard() {
         setLoadError(getDashboardLoadError(err))
       })
 
+    requestRecentActivity()
+      .then((events) => {
+        if (activityCancelled) return
+        setActivityEvents(events)
+        setActivityStatus('ready')
+      })
+      .catch((err) => {
+        if (activityCancelled) return
+        setActivityEvents([])
+        setActivityStatus('error')
+        setActivityError(getActivityLoadError(err))
+      })
+
     return () => {
       cancelled = true
+      activityCancelled = true
     }
   }, [])
 
   const stats = useMemo(() => computeStats(clients, tasks), [clients, tasks])
   const statCards = useMemo(() => buildStatCards(stats), [stats])
   const upcoming = useMemo(() => computeUpcoming(tasks), [tasks])
-  const updates = useMemo(
-    () => computeUpdates(clients, tasks),
-    [clients, tasks],
-  )
 
   if (loadStatus === 'loading') {
     return <DashboardSkeleton />
@@ -756,7 +822,7 @@ export default function Dashboard() {
     return (
       <div className="dashboard-error">
         <p className="dashboard-error__message">{loadError}</p>
-        <button type="button" className="btn btn--secondary" onClick={fetchData}>
+        <button type="button" className="btn btn--secondary" onClick={handleRetryAll}>
           Try again
         </button>
       </div>
@@ -789,7 +855,12 @@ export default function Dashboard() {
       <DashboardInsights clients={clients} tasks={tasks} />
 
       <section className="dashboard-panels" aria-label="Overview">
-        <RecentUpdatesPanel updates={updates} />
+        <RecentUpdatesPanel
+          updates={activityEvents}
+          loadStatus={activityStatus}
+          loadError={activityError}
+          onRetry={fetchActivity}
+        />
         <UpcomingTasksPanel upcoming={upcoming} />
       </section>
     </div>

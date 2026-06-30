@@ -4,6 +4,10 @@ export function listInvoices() {
   return apiRequest('/api/invoices')
 }
 
+export function listClientInvoices(clientId) {
+  return apiRequest(`/api/clients/${clientId}/invoices`)
+}
+
 export function getInvoice(id) {
   return apiRequest(`/api/invoices/${id}`)
 }

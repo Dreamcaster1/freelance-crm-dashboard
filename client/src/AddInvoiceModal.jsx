@@ -32,6 +32,8 @@ export default function AddInvoiceModal({
   isSubmitting = false,
   isMarkingPaid = false,
   serverError = null,
+  initialClientId = '',
+  lockClient = false,
 }) {
   useOverlayLock(isOpen)
 
@@ -40,7 +42,9 @@ export default function AddInvoiceModal({
   return (
     <InvoiceModalContent
       key={
-        invoice ? `invoice-${invoice.id}-${invoice.status}` : 'new-invoice'
+        invoice
+          ? `invoice-${invoice.id}-${invoice.status}`
+          : `new-invoice-${initialClientId || 'none'}-${lockClient ? 'locked' : 'open'}`
       }
       invoice={invoice}
       onClose={onClose}
@@ -50,6 +54,8 @@ export default function AddInvoiceModal({
       isSubmitting={isSubmitting}
       isMarkingPaid={isMarkingPaid}
       serverError={serverError}
+      initialClientId={initialClientId}
+      lockClient={lockClient}
     />
   )
 }
@@ -101,12 +107,20 @@ function InvoiceModalContent({
   isSubmitting,
   isMarkingPaid,
   serverError,
+  initialClientId,
+  lockClient,
 }) {
   const isEditing = Boolean(invoice)
   const notesOnly = isEditing && isInvoiceNotesOnlyEdit(invoice)
   const showMarkPaid = isEditing && canMarkInvoicePaid(invoice)
+  const isClientLocked = lockClient && !isEditing
   const [form, setForm] = useState(() =>
-    invoice ? mapInvoiceToForm(invoice) : getDefaultInvoiceForm(),
+    invoice
+      ? mapInvoiceToForm(invoice)
+      : {
+          ...getDefaultInvoiceForm(),
+          clientId: initialClientId ? String(initialClientId) : '',
+        },
   )
   const [errors, setErrors] = useState({})
 
@@ -216,7 +230,7 @@ function InvoiceModalContent({
                   className={`field-select${errors.clientId ? ' field-input--error' : ''}`}
                   value={form.clientId}
                   onChange={(event) => updateField('clientId', event.target.value)}
-                  disabled={isSubmitting || isMarkingPaid || !hasClients}
+                  disabled={isSubmitting || isMarkingPaid || !hasClients || isClientLocked}
                   required
                 >
                   <option value="">

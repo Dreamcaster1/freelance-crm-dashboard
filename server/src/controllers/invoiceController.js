@@ -8,6 +8,7 @@ import {
   markInvoiceAsSent,
   updateInvoice,
 } from '../models/invoiceModel.js'
+import { recordActivityEvent } from '../utils/activityRecorder.js'
 import { mapInvoiceResponse, mapInvoiceResponses } from '../utils/invoiceMapper.js'
 import { assertJsonObject, validateCalendarDate } from '../utils/validation.js'
 
@@ -515,6 +516,7 @@ export async function getInvoice(req, res) {
 
 export async function createInvoiceHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const validation = validateCreateBody(req.body)
 
   if (validation.error) {
@@ -528,6 +530,16 @@ export async function createInvoiceHandler(req, res) {
 
   try {
     const invoice = await createInvoice(workspaceId, validation.data)
+    await recordActivityEvent({
+      workspaceId,
+      actorUserId,
+      entityType: 'invoice',
+      entityId: invoice.id,
+      eventType: 'invoice.created',
+      title: `Invoice created: ${invoice.invoice_number}`,
+      description: `${invoice.client_name} • ${invoice.title}`,
+      metadata: { status: invoice.status },
+    })
 
     return res.status(201).json({
       ok: true,
@@ -547,6 +559,7 @@ export async function createInvoiceHandler(req, res) {
 
 export async function updateInvoiceHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const invoiceId = parseInvoiceId(req.params.id)
 
   if (!invoiceId) {
@@ -622,6 +635,20 @@ export async function updateInvoiceHandler(req, res) {
       return res.status(404).json({ ok: false, error: 'Invoice not found.' })
     }
 
+    await recordActivityEvent({
+      workspaceId,
+      actorUserId,
+      entityType: 'invoice',
+      entityId: invoice.id,
+      eventType: 'invoice.updated',
+      title: `Invoice updated: ${invoice.invoice_number}`,
+      description: `${invoice.client_name} • ${invoice.title}`,
+      metadata: {
+        previousStatus: existingInvoice.status,
+        currentStatus: invoice.status,
+      },
+    })
+
     return res.json({
       ok: true,
       invoice: mapInvoiceResponse(invoice),
@@ -640,10 +667,16 @@ export async function updateInvoiceHandler(req, res) {
 
 export async function deleteInvoiceHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const invoiceId = parseInvoiceId(req.params.id)
 
   if (!invoiceId) {
     return res.status(400).json({ ok: false, error: 'Invalid invoice id.' })
+  }
+
+  const existingInvoice = await findInvoiceById(workspaceId, invoiceId)
+  if (!existingInvoice) {
+    return res.status(404).json({ ok: false, error: 'Invoice not found.' })
   }
 
   const deleted = await deleteInvoice(workspaceId, invoiceId)
@@ -651,11 +684,22 @@ export async function deleteInvoiceHandler(req, res) {
     return res.status(404).json({ ok: false, error: 'Invoice not found.' })
   }
 
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId,
+    entityType: 'invoice',
+    entityId: invoiceId,
+    eventType: 'invoice.deleted',
+    title: `Invoice deleted: ${existingInvoice.invoice_number}`,
+    description: `${existingInvoice.client_name} • ${existingInvoice.title}`,
+  })
+
   return res.json({ ok: true })
 }
 
 export async function markInvoiceSentHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const invoiceId = parseInvoiceId(req.params.id)
 
   if (!invoiceId) {
@@ -682,6 +726,16 @@ export async function markInvoiceSentHandler(req, res) {
     return res.status(404).json({ ok: false, error: 'Invoice not found.' })
   }
 
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId,
+    entityType: 'invoice',
+    entityId: invoice.id,
+    eventType: 'invoice.marked_sent',
+    title: `Invoice sent: ${invoice.invoice_number}`,
+    description: `${invoice.client_name} • ${invoice.title}`,
+  })
+
   return res.json({
     ok: true,
     invoice: mapInvoiceResponse(invoice),
@@ -690,6 +744,7 @@ export async function markInvoiceSentHandler(req, res) {
 
 export async function markInvoicePaidHandler(req, res) {
   const workspaceId = req.session.workspaceId
+  const actorUserId = req.session.userId
   const invoiceId = parseInvoiceId(req.params.id)
 
   if (!invoiceId) {
@@ -724,6 +779,17 @@ export async function markInvoicePaidHandler(req, res) {
   if (!invoice) {
     return res.status(404).json({ ok: false, error: 'Invoice not found.' })
   }
+
+  await recordActivityEvent({
+    workspaceId,
+    actorUserId,
+    entityType: 'invoice',
+    entityId: invoice.id,
+    eventType: 'invoice.marked_paid',
+    title: `Invoice paid: ${invoice.invoice_number}`,
+    description: `${invoice.client_name} • ${invoice.title}`,
+    metadata: { paidDate: invoice.paid_date },
+  })
 
   return res.json({
     ok: true,
